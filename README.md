@@ -1,6 +1,39 @@
 # json-mapper
 Generate Java classes with Jackson annotations with some convenient creation/mapping functions.
 
+## Usage
+
+### Maven
+
+Add the annotation processor class to your pom.xml and rebuild your project.
+
+```
+	<build>
+		<plugins>
+			...
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				...
+				<configuration>
+					...
+					<annotationProcessorPaths>
+						...
+						<path>
+							<groupId>net.magiccode.json</groupId>
+							<artifactId>JsonMapper</artifactId>
+							<version>0.0.1</version>
+						</path>
+						...
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+
+		</plugins>
+
+	</build>
+```
+
 ## Annotations
 
 ### @JSONMapped
