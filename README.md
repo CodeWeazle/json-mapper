@@ -33,6 +33,6 @@ Some arguments can be provided to have some influence on the code generation.
 - subpackageName
   - Defines the name for a subpackage added to the default if **packageName** is not specified.
 	
-- jsonInclude (ALWAYS,NON_NULL,NON_ABSENT,NON_EMPTY,NON_DEFAULT,CUSTOM,USE_DEFAULTS)
+- jsonInclude (ALWAYS|NON_NULL|NON_ABSENT|NON_EMPTY|NON_DEFAULT|CUSTOM|USE_DEFAULTS)
   - Generated classes are annotated with **@JsonInclude**. This defaults to ALWAYS, but can be specified otherwise by using the **jsonInclude** argument.
 
