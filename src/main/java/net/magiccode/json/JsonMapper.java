@@ -94,7 +94,7 @@ public class JsonMapper extends MapperBase {
 			// deriving the name of the class containing the annotation
 			ClassName className = ClassName.get(typeElement);
 	
-			messager.printNote("Class " + className.canonicalName());
+			messager.printMessage(Diagnostic.Kind.NOTE, "Class " + className.canonicalName());
 	
 			if (!result.containsKey(className))
 				result.put(className, new ArrayList<ElementInfo>());

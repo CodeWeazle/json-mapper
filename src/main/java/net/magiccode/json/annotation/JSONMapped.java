@@ -17,7 +17,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public @interface JSONMapped {
 	
-	
 	boolean fromEntity() default true;
 
 	boolean chainedSetters() default true;
