@@ -9,6 +9,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.squareup.javapoet.ClassName;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -77,13 +78,12 @@ public class ElementInfo {
 	/**
 	 * superinterface for generated classes
 	 */
-	private Class<?> superInterface;
-
+	private ClassName superinterface;
 	
 	/**
 	 * supuerclass for generated classes
 	 */
-	private Class<?> superClass;
+	private ClassName superclass;
 	
 	// experimental
 	private boolean useLombok;
