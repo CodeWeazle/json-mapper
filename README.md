@@ -87,7 +87,7 @@ in the generated code.
 
 ### @JSONRequired
 
-Every field in the generated class will be annotated with **@JsonProperty** unless marked sith **@JSONTransient**. Setting **@JSONRequired** on a field 
+Every field in the generated class will be annotated with **@JsonProperty** unless marked with **@JSONTransient**. Setting **@JSONRequired** on a field 
 additionally adds the **required = true** argument.
 
 ```
