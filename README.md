@@ -6,7 +6,7 @@
 
 ### Maven
 
-Add the annotation processor class to your pom.xml and rebuild your project.
+Add the annotation processor class to your pom.xml and rebuild your project. (The version shown is related to the --release-- branch.)
 
 ```
 	<build>
@@ -22,8 +22,8 @@ Add the annotation processor class to your pom.xml and rebuild your project.
 						...
 						<path>
 							<groupId>net.magiccode.json</groupId>
-							<artifactId>JsonMapper</artifactId>
-							<version>0.0.1</version>
+							<artifactId>json-mapper</artifactId>
+							<version>0.0.2</version>
 						</path>
 						...
 					</annotationProcessorPaths>
