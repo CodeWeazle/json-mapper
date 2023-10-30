@@ -124,8 +124,6 @@ net.magiccode.lazy.json.JSONExampleCode04{
 ```
 
 
-
-
 ## Libraries
 
 At the time being, the dependencies used by *json-mapper* are
@@ -184,3 +182,13 @@ At the time being, the dependencies used by *json-mapper* are
 		<version>${log4j.version}</version>
 	</dependency>
 ```
+
+## Todos
+
+- implement Builder for generated classes
+- handle class inheritance properly
+  - pick up fields from superclasses
+  - handle plain vs. hierarchy generation 
+- rename *fromSource* in *of* 
+- generate *to* method to be able to create and populate annotated class
+- generate methods for annotated class to handle mapping
