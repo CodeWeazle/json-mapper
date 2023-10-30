@@ -119,6 +119,8 @@ public class JsonMapper extends MapperBase {
 																												// generated.
 						.element(typeElement) // the current element
 						.fields(fields) // field descriptions of the annotated class
+						.superClass(jsonMapped.superClass())
+						.superInterface(jsonMapped.superInterface())
 						.useLombok(jsonMapped.useLombok())
 						.build());
 			}

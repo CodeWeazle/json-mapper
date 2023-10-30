@@ -74,6 +74,17 @@ public class ElementInfo {
 	 */
 	private List<VariableElement> fields;
 	
+	/**
+	 * superinterface for generated classes
+	 */
+	private Class<?> superInterface;
+
+	
+	/**
+	 * supuerclass for generated classes
+	 */
+	private Class<?> superClass;
+	
 	// experimental
 	private boolean useLombok;
 }

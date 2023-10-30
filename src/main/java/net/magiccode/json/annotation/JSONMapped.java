@@ -33,4 +33,8 @@ public @interface JSONMapped {
 	
 	boolean useLombok() default false;
 	
+	Class<?> superClass();
+	
+	Class<?> superInterface();
+	
 }

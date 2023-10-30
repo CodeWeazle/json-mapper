@@ -186,6 +186,12 @@ logger.debug("Generating field " + field.getSimpleName().toString());
 												.addMember("fluent", annotationInfo.fluentAccessors()?"true":"false" )
 												.build());
 		}
+		if (annotationInfo.superClass()!= null && ! annotationInfo.superClass().isInterface()) {
+			generatedJSONClassBuilder.superclass(annotationInfo.superClass());
+		}
+		if (annotationInfo.superInterface()!= null && annotationInfo.superInterface().isInterface()) {
+			generatedJSONClassBuilder.addSuperinterface(annotationInfo.superInterface());
+		}
 		TypeSpec generatedJSONClass = generatedJSONClassBuilder.build();
 
 if (logger.isInfoEnabled())						
