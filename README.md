@@ -56,7 +56,7 @@ Some arguments can be provided to have some influence on the code generation.
 |prefix | JSON |Adds a prefix to the name of the generated class. Defaults to "JSON"|
 |packageName| |Defines the name of the packacke for the generated class. If no **packageName** is given, this defaults to the package of the annotated class.|
 |subpackageName| |Defines the name for a subpackage added to the default if **packageName** is not specified.|
-|jsonInclude |**ALWAYS**,** NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS|Generated classes are annotated with **@JsonInclude**. This defaults to ALWAYS, but can be specified otherwise by using the **jsonInclude** argument.|
+|jsonInclude |**ALWAYS**, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS|Generated classes are annotated with **@JsonInclude**. This defaults to ALWAYS, but can be specified otherwise by using the **jsonInclude** argument.|
 |superClass| |The superclass that the generated class will extend.|
 |superInterface| |The superinterface that the generated class will implement.|
 
