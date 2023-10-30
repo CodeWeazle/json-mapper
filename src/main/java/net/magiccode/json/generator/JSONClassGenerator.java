@@ -111,7 +111,7 @@ if (logger.isInfoEnabled())
 	 */
 	private void createFieldsGettersAndSetters(ElementInfo annotationInfo, List<FieldSpec> fields,
 			List<MethodSpec> methods) {
-		// Generate field, getter and setter
+		// Generate fields, getters and setters
 		for (VariableElement field : annotationInfo.fields()) {
 			
 			TypeMirror fieldType = field.asType();
@@ -132,7 +132,7 @@ logger.debug("Generating field " + field.getSimpleName().toString());
 	 * @param methods
 	 */
 	private void createFields(ElementInfo annotationInfo, List<FieldSpec> fields) {
-		// Generate field, getter and setter
+		// Generate fields
 		for (VariableElement field : annotationInfo.fields()) {
 			TypeMirror fieldType = field.asType();
 			TypeName fieldClass = TypeName.get(fieldType);
@@ -208,7 +208,7 @@ if (logger.isInfoEnabled())
 	 * @param methods
 	 */
 	private void createToString(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
-		// create fromSource method
+		// create toSTring method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString")
 				.addModifiers(Modifier.PUBLIC)
 				.addStatement("String stringRep = this.getClass().getName()");
@@ -238,7 +238,7 @@ if (logger.isInfoEnabled())
 	 * @param methods
 	 */
 	private void createToJSONString(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
-		// create fromSource method
+		// create toJSONString method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toJSONString")
 				.addModifiers(Modifier.PUBLIC)
 				
