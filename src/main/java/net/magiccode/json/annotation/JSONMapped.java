@@ -17,7 +17,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public @interface JSONMapped {
 	
-	
 	boolean fromEntity() default true;
 
 	boolean chainedSetters() default true;
@@ -33,5 +32,9 @@ public @interface JSONMapped {
 	Include jsonInclude() default Include.ALWAYS;
 	
 	boolean useLombok() default false;
+	
+	String superclass() default "";
+	
+	String superinterface() default "";
 	
 }
