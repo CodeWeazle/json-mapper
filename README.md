@@ -74,8 +74,8 @@ Some arguments can be provided to have some influence on the code generation.
 This annotation works on field level and is used to mark fields that will be annotated with **@JsonIgnore** in the generated code.
 
 ```
- 	@JsonIgnore
-    private String ignoredValue;
+@JsonIgnore
+private String ignoredValue;
 ```
 
 
@@ -85,11 +85,11 @@ Every field in the generated class will be annotated with **@JsonProperty** unle
 additionally adds the **required = true** argument.
 
 ```
- 	@JsonProperty(
-            value = "third_field",
-            required = true
-    )
-    private Double doubleVAlue;
+@JsonProperty(
+       value = "third_field",
+       required = true
+)
+private Double doubleValue;
 ```
 
 ## Generated code
