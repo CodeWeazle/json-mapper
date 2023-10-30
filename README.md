@@ -58,7 +58,7 @@ Some arguments can be provided to have some influence on the code generation.
   - Generates setters which return **this**. 
 
 - prefix 
-  - Adds a prefix to the name of the generated class. Defaults to **JSON**
+  - Adds a prefix to the name of the generated class. Defaults to "JSON"
 
 - packageName
   - Defines the name of the packacke for the generated class. If no **packageName** is given, this defaults to the package of the annotated class.
