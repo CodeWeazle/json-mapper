@@ -1,6 +1,6 @@
 # json-mapper
 
-**json-mapper** implements and annotation processor to generate Java classes with Jackson annotations with some convenient creation/mapping functions.
+**json-mapper** implements an annotation processor to generate Java classes with Jackson annotations with some convenient creation/mapping functions.
 
 ## Usage
 
@@ -126,7 +126,61 @@ net.magiccode.lazy.json.JSONExampleCode04{
 
 
 
+## Libraries
 
+At the time being, the dependencies used by **json-mapper** are
 
+```
+	<properties>
+		<java.version>17</java.version>
+		<jackson.version>2.15.0</jackson.version>
+		<log4j.version>2.21.1</log4j.version>
+		<lombok.version>1.18.30</lombok.version>
+		<javapoet.version>1.13.0</javapoet.version>
+		<auto-service.version>1.1.1</auto-service.version>
+	</properties>
 
+	...
 
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-core</artifactId>
+		<version>${jackson.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-databind</artifactId>
+		<version>${jackson.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-annotations</artifactId>
+		<version>${jackson.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>org.projectlombok</groupId>
+		<artifactId>lombok</artifactId>
+		<version>${lombok.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.squareup</groupId>
+		<artifactId>javapoet</artifactId>
+		<version>${javapoet.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.google.auto.service</groupId>
+		<artifactId>auto-service</artifactId>
+		<version>${auto-service.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>org.apache.logging.log4j</groupId>
+		<artifactId>log4j-core</artifactId>
+		<version>${log4j.version}</version>
+	</dependency>
+```
