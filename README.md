@@ -1,5 +1,6 @@
 # json-mapper
-Generate Java classes with Jackson annotations with some convenient creation/mapping functions.
+
+**json-mapper** implements and annotation processor to generate Java classes with Jackson annotations with some convenient creation/mapping functions.
 
 ## Usage
 
