@@ -130,26 +130,10 @@ public class JsonMapper extends MapperBase {
 				
 				TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());
 				if (superClassElement != null) {
-					
-//						roundEnv.getRootElements().stream()						
-						
-//						  .peek(element -> System.out.println("Element(c) classname: "+element.  )
-						  
-//						  .filter(element->element.getClass().getName().equals(jsonMapped.superclass())) 
-//						  .findFirst()
-//						  .orElse(null);
-//				
-//				if (superClassElement != null ) {
 					elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));
 				}
 
 				TypeElement superInterfaceElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superinterface());
-//				Element superInterfaceElement = roundEnv.getRootElements().stream()
-//						  .peek(element -> System.out.println("Element(i) classname: "+element.asType().getClass().getName()))
-//						  .filter(element->element.asType().getClass().getName()
-//								   .equals(jsonMapped.superinterface())) 
-//						  .findFirst()
-//						  .orElse(null);
 					if (superInterfaceElement != null ) {
 							elementInfoBuiler.superinterface(ClassName.get((TypeElement)superInterfaceElement));
 					}
