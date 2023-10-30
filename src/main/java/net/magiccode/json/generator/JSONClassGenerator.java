@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -16,9 +17,9 @@ import javax.lang.model.type.TypeMirror;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -34,7 +35,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
-import lombok.extern.log4j.Log4j2;
 import net.magiccode.json.annotation.JSONRequired;
 import net.magiccode.json.annotation.JSONTransient;
 import net.magiccode.json.util.ReflectionUtil;
@@ -43,20 +43,23 @@ import net.magiccode.json.util.StringUtil;
 /**
  * 
  */
-@Log4j2
 public class JSONClassGenerator implements ClassGenerator {
 
 	Map<ClassName, List<ElementInfo>> input;
 	Filer filer;
+	Messager messager;
 
 	/**
 	 * @param filer
 	 * @param input
 	 * @param elements
 	 */
-	public JSONClassGenerator(Filer filer, Map<ClassName, List<ElementInfo>> input) {
+	public JSONClassGenerator(Filer filer,
+							  Messager messager,
+							  Map<ClassName, List<ElementInfo>> input) {
 		this.filer = filer;
 		this.input = input;
+		this.messager = messager;
 	}
 
 	/**
@@ -71,8 +74,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				try {
 					String className = annotationInfo.prefix() + annotationInfo.className();
 
-if (logger.isInfoEnabled())						
-	logger.info("Generating " + className);
+					messager.printNote("Generating " + className);
 
 					String packageName = generatePackageName(key, annotationInfo);
 					List<FieldSpec> fields = new ArrayList<>();
@@ -98,7 +100,7 @@ if (logger.isInfoEnabled())
 												.build();
 					javaFile.writeTo(filer);
 				} catch (IOException e) {
-					e.printStackTrace();
+					messager.printError("Error occured while generating class "+key+". "+e.getLocalizedMessage());
 				}
 			});
 		}
@@ -113,15 +115,18 @@ if (logger.isInfoEnabled())
 			List<MethodSpec> methods) {
 		// Generate fields, getters and setters
 		for (VariableElement field : annotationInfo.fields()) {
-			
-			TypeMirror fieldType = field.asType();
-			TypeName fieldClass = TypeName.get(fieldType);
-if (logger.isDebugEnabled())						
-logger.debug("Generating field " + field.getSimpleName().toString());
+			if (!(field.getModifiers().contains(Modifier.FINAL) &&
+				 field.getModifiers().contains(Modifier.PRIVATE) &&
+				 field.getModifiers().contains(Modifier.STATIC))) {
 
-			fields.add(createFieldSpec(field, fieldClass));
-			methods.add(createGetterMethodSpec(field, fieldClass, annotationInfo));
-			methods.add(createSetterMethodSpec(field, annotationInfo));
+				TypeMirror fieldType = field.asType();
+				TypeName fieldClass = TypeName.get(fieldType);
+				messager.printNote ("Generating field " + field.getSimpleName().toString());
+	
+				fields.add(createFieldSpec(field, fieldClass));
+				methods.add(createGetterMethodSpec(field, fieldClass, annotationInfo));
+				methods.add(createSetterMethodSpec(field, annotationInfo));
+			}
 		}
 	}
 
@@ -134,11 +139,14 @@ logger.debug("Generating field " + field.getSimpleName().toString());
 	private void createFields(ElementInfo annotationInfo, List<FieldSpec> fields) {
 		// Generate fields
 		for (VariableElement field : annotationInfo.fields()) {
-			TypeMirror fieldType = field.asType();
-			TypeName fieldClass = TypeName.get(fieldType);
-if (logger.isDebugEnabled())						
-logger.debug("Generating field " + field.getSimpleName().toString());
-			fields.add(createFieldSpec(field, fieldClass));
+			if (!(field.getModifiers().contains(Modifier.FINAL) &&
+				 field.getModifiers().contains(Modifier.PRIVATE) &&
+				 field.getModifiers().contains(Modifier.STATIC))) {
+				TypeMirror fieldType = field.asType();
+				TypeName fieldClass = TypeName.get(fieldType);
+				messager.printNote("Generating field " + field.getSimpleName().toString());
+				fields.add(createFieldSpec(field, fieldClass));
+			}
 		}
 	}
 
@@ -194,8 +202,7 @@ logger.debug("Generating field " + field.getSimpleName().toString());
 		}
 		TypeSpec generatedJSONClass = generatedJSONClassBuilder.build();
 
-if (logger.isInfoEnabled())						
-	logger.info("Generated " + className);
+		messager.printNote("Generated " + className);
 
 		return generatedJSONClass;
 	}
@@ -213,11 +220,15 @@ if (logger.isInfoEnabled())
 				.addModifiers(Modifier.PUBLIC)
 				.addStatement("String stringRep = this.getClass().getName()");
 				for (VariableElement field : annotationInfo.fields()) {
-					String fieldName = field.getSimpleName().toString();
-					String statement = "stringRep += \"$L=\"+$L";
-					if(field != annotationInfo.fields().get(annotationInfo.fields().size() - 1))
-						statement += "+\", \""; 
-					toStringBuilder.addStatement(statement, fieldName, fieldName);
+					if (!(field.getModifiers().contains(Modifier.FINAL) &&
+						 field.getModifiers().contains(Modifier.PRIVATE) &&
+						 field.getModifiers().contains(Modifier.STATIC))) {
+						String fieldName = field.getSimpleName().toString();
+						String statement = "stringRep += \"$L=\"+$L";
+						if(field != annotationInfo.fields().get(annotationInfo.fields().size() - 1))
+							statement += "+\", \""; 
+						toStringBuilder.addStatement(statement, fieldName, fieldName);
+					}
 				}
 				toStringBuilder.addStatement("stringRep += \")\"")
 								.addStatement("return stringRep")
@@ -271,15 +282,23 @@ if (logger.isInfoEnabled())
 					    .builder()
 					    .add("Creates object with all given values, acts basically as a AllArgsConstructor.\n")
 					    .build());
-
 				for (VariableElement field : annotationInfo.fields()) {
-					TypeMirror fieldType = field.asType();
-					TypeName fieldClass = TypeName.get(fieldType);
-					fromSource.addParameter(fieldClass ,field.getSimpleName().toString(), new Modifier[0]);										
+					if (!(field.getModifiers().contains(Modifier.FINAL) &&
+						 field.getModifiers().contains(Modifier.PRIVATE) &&
+						 field.getModifiers().contains(Modifier.STATIC))) {
+						TypeMirror fieldType = field.asType();
+						TypeName fieldClass = TypeName.get(fieldType);
+						fromSource.addParameter(fieldClass ,field.getSimpleName().toString(), new Modifier[0]);
+					}
 				};
 				for (VariableElement field : annotationInfo.fields()) {
-					String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
-					fromSource.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());
+					if (!(field.getModifiers().contains(Modifier.FINAL) &&
+						 field.getModifiers().contains(Modifier.PRIVATE) &&
+						 field.getModifiers().contains(Modifier.STATIC))) {
+						
+						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
+						fromSource.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());
+					}
 			    }
 				fromSource.addStatement("return newJsonObect")
 				
@@ -315,26 +334,31 @@ if (logger.isInfoEnabled())
 					    .build());
 		
 				for (VariableElement field : annotationInfo.fields()) {
-					TypeMirror fieldType = field.asType();
-					TypeName fieldClass = TypeName.get(fieldType);
-					String fieldName = field.getSimpleName().toString();
-					String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
-					fromSource.beginControlFlow("try")
-							  .beginControlFlow("if ($L.getClass().getDeclaredField($L) != null)", incomingObjectName, StringUtil.quote(fieldName))								   		
-									.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L.getClass().getDeclaredField($L)))",  
-												  setterName,
-										   		  fieldClass,
-										   		  ReflectionUtil.class, 
-										   		  incomingObjectName,
-										   		  incomingObjectName,
-										   		  StringUtil.quote(fieldName))
-							  .endControlFlow()
-							  .endControlFlow()
-							  .beginControlFlow("catch ($T | $T | $T e)", NoSuchFieldException.class, 
-																		  SecurityException.class,
-																		  IllegalAccessException.class)
-									.addStatement("e.printStackTrace()")
-							  .endControlFlow();
+					if (!(field.getModifiers().contains(Modifier.FINAL) &&
+						 field.getModifiers().contains(Modifier.PRIVATE) &&
+						 field.getModifiers().contains(Modifier.STATIC))) {
+
+						TypeMirror fieldType = field.asType();
+						TypeName fieldClass = TypeName.get(fieldType);
+						String fieldName = field.getSimpleName().toString();
+						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
+						fromSource.beginControlFlow("try")
+								  .beginControlFlow("if ($L.getClass().getDeclaredField($L) != null)", incomingObjectName, StringUtil.quote(fieldName))								   		
+										.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L.getClass().getDeclaredField($L)))",  
+													  setterName,
+											   		  fieldClass,
+											   		  ReflectionUtil.class, 
+											   		  incomingObjectName,
+											   		  incomingObjectName,
+											   		  StringUtil.quote(fieldName))
+								  .endControlFlow()
+								  .endControlFlow()
+								  .beginControlFlow("catch ($T | $T | $T e)", NoSuchFieldException.class, 
+																			  SecurityException.class,
+																			  IllegalAccessException.class)
+										.addStatement("e.printStackTrace()")
+								  .endControlFlow();
+					}
 			    }
 				fromSource.addStatement("return newJsonObect")
 				.returns(ClassName.get(packageName, className));
