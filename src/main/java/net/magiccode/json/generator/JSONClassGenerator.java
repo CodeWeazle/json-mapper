@@ -263,7 +263,7 @@ if (logger.isInfoEnabled())
 				.addStatement(className+" newJsonObect = new "+className+"();")
 				.addJavadoc(CodeBlock
 					    .builder()
-					    .add("Creates object from wieth all given values, acts basically as a AllArgsConstructor.\n")
+					    .add("Creates object with all given values, acts basically as a AllArgsConstructor.\n")
 					    .build());
 
 				for (VariableElement field : annotationInfo.fields()) {
