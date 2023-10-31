@@ -13,6 +13,7 @@ import javax.annotation.processing.Messager;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -74,7 +75,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				try {
 					String className = annotationInfo.prefix() + annotationInfo.className();
 
-					messager.printNote("Generating " + className);
+					messager.printMessage(Diagnostic.Kind.NOTE,"Generating " + className);
 
 					String packageName = generatePackageName(key, annotationInfo);
 					List<FieldSpec> fields = new ArrayList<>();
@@ -121,7 +122,7 @@ public class JSONClassGenerator implements ClassGenerator {
 
 				TypeMirror fieldType = field.asType();
 				TypeName fieldClass = TypeName.get(fieldType);
-				messager.printNote ("Generating field " + field.getSimpleName().toString());
+				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
 	
 				fields.add(createFieldSpec(field, fieldClass));
 				methods.add(createGetterMethodSpec(field, fieldClass, annotationInfo));
@@ -144,7 +145,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				 field.getModifiers().contains(Modifier.STATIC))) {
 				TypeMirror fieldType = field.asType();
 				TypeName fieldClass = TypeName.get(fieldType);
-				messager.printNote("Generating field " + field.getSimpleName().toString());
+				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
 				fields.add(createFieldSpec(field, fieldClass));
 			}
 		}
@@ -202,7 +203,7 @@ public class JSONClassGenerator implements ClassGenerator {
 		}
 		TypeSpec generatedJSONClass = generatedJSONClassBuilder.build();
 
-		messager.printNote("Generated " + className);
+		messager.printMessage(Diagnostic.Kind.NOTE,"Generated " + className);
 
 		return generatedJSONClass;
 	}
