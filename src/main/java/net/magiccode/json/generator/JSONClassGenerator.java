@@ -101,7 +101,7 @@ public class JSONClassGenerator implements ClassGenerator {
 												.build();
 					javaFile.writeTo(filer);
 				} catch (IOException e) {
-					messager.printError("Error occured while generating class "+key+". "+e.getLocalizedMessage());
+					messager.printMessage(Diagnostic.Kind.ERROR,"Error occured while generating class "+key+". "+e.getLocalizedMessage());
 				}
 			});
 		}
