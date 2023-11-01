@@ -35,6 +35,6 @@ public @interface JSONMapped {
 	
 	String superclass() default "";
 	
-	String superinterface() default "";
+	String[] interfaces() default{};
 	
 }

@@ -5,6 +5,7 @@ package net.magiccode.json;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +107,20 @@ public class JsonMapper extends MapperBase {
 			if (result.containsKey(className)) {
 	
 				List<VariableElement> fields = ElementFilter.fieldsIn(typeElement.getEnclosedElements());
-	
+				
+				TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());				
+				/**
+				 * we have to remember, which interface exists and what needs to be created.
+				 * We use a map for this purpose. Key is the classname, value the found TypeElement
+				 */
+				final Map<String, TypeElement> interfaces = new HashMap<>();
+				if (jsonMapped.interfaces() != null) {
+					Arrays.asList(jsonMapped.interfaces()).stream().forEach(intf -> {
+						TypeElement interfaceElement = procEnv.getElementUtils().getTypeElement(intf);
+						interfaces.put(intf, interfaceElement);
+					});
+				}
+				
 				
 				ElementInfoBuilder elementInfoBuiler = ElementInfo.builder().className(className.simpleName()) // the name of the class
 																												// containing the
@@ -127,26 +141,31 @@ public class JsonMapper extends MapperBase {
 																			
 																			.useLombok(jsonMapped.useLombok());
 				
-				
-				
-				TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());
 				if (superClassElement != null) {
 					elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));
 				}
-
-				TypeElement superInterfaceElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superinterface());
-					if (superInterfaceElement != null ) {
-							elementInfoBuiler.superinterface(ClassName.get((TypeElement)superInterfaceElement));
-					}
-				result.get(className).add(elementInfoBuiler.build());
-			}
-
-			List<? extends TypeMirror> list = typeElement.getInterfaces();
-			for (TypeMirror typeMirror : list) {
-				ClassName typeName = getName(typeMirror);
-				System.out.println("Inteface: " + typeName.canonicalName());
+				// add interfaces
+				ElementInfo elementInfo = elementInfoBuiler.build();
+				if (interfaces != null && interfaces.size()>0) {
+					interfaces.entrySet().stream()
+										 // add only existing interfaces
+										 .filter(entry -> entry.getValue() != null)
+										 // use only the TypeElement
+										 .map(entry -> entry.getValue())
+										 .forEach(intf-> {
+											 elementInfo.addInterface(ClassName.get(intf));
+					});
+				}
+				result.get(className).add(elementInfo);
 				
 			}
+
+//			List<? extends TypeMirror> list = typeElement.getInterfaces();
+//			for (TypeMirror typeMirror : list) {
+//				ClassName typeName = getName(typeMirror);
+//				System.out.println("Inteface: " + typeName.canonicalName());
+//				
+//			}
 		}
 
 	}

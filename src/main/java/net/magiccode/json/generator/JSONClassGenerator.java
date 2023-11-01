@@ -87,14 +87,13 @@ public class JSONClassGenerator implements ClassGenerator {
 					} else { // otherwise, we also need getters and setters
 						createNoArgsConstructor(packageName, className, methods);
 						createFieldsGettersAndSetters(annotationInfo, fields, methods);
-						createFromSourceWithArguments(packageName, className, annotationInfo, methods);
-						createFromSourceWithClass(key, packageName, className, annotationInfo, methods);
 						createToString(packageName, className, annotationInfo, methods);
 					}
+					createFromSourceWithArguments(packageName, className, annotationInfo, methods);
+					createFromSourceWithClass(key, packageName, className, annotationInfo, methods);
 					createToJSONString(packageName, className, annotationInfo, methods);	
 					
-					TypeSpec generatedJSONClass = generateClass(annotationInfo, className, packageName, fields,
-							methods);
+					TypeSpec generatedJSONClass = generateClass(annotationInfo, className, packageName, fields, methods);
 
 					JavaFile javaFile = JavaFile.builder(packageName, generatedJSONClass)
 												.indent("    ")
@@ -195,11 +194,19 @@ public class JSONClassGenerator implements ClassGenerator {
 												.addMember("fluent", annotationInfo.fluentAccessors()?"true":"false" )
 												.build());
 		}
+		
+		// add superclass
 		if (annotationInfo.superclass() != null) {
 			generatedJSONClassBuilder.superclass(annotationInfo.superclass());
 		}
-		if (annotationInfo.superinterface()!= null) {
-			generatedJSONClassBuilder.addSuperinterface(annotationInfo.superinterface());			
+		
+		// add provided interface
+		if (annotationInfo.interfaces() != null) {
+			annotationInfo.interfaces().stream()
+				// filter existing classes 
+				 .forEach( intf -> {
+					 generatedJSONClassBuilder.addSuperinterface(intf);
+				 });			 
 		}
 		TypeSpec generatedJSONClass = generatedJSONClassBuilder.build();
 
