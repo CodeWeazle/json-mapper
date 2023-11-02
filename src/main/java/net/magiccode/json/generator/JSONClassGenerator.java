@@ -297,7 +297,8 @@ public class JSONClassGenerator implements ClassGenerator {
 				//.addParameter(key, incomingObjectName, new Modifier[0])
 				.addParameter(ClassName.get(Object.class), incomingObjectName, new Modifier[0])
 				.addStatement(className +" newJsonObect = new "+className+"()")
-		
+				.addException(IllegalAccessException.class)
+
 				.addJavadoc(CodeBlock
 					    .builder()
 					    .add("Creates object from source class. Since source class has not been compiled at this point,\n")
@@ -315,25 +316,20 @@ public class JSONClassGenerator implements ClassGenerator {
 						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
 						String localFieldName = "field"+fieldCount.getAndIncrement();
 						of
-							.beginControlFlow("try")
-								  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
-										  												 localFieldName,
-										  												 ReflectionUtil.class, 
-										  												 className+".class", 
-										  												 fieldName)
-						
-								  .beginControlFlow("if ($L != null)" , localFieldName)
-									.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
-													  setterName,
-											   		  fieldClass,
-											   		  ReflectionUtil.class, 
-											   		  incomingObjectName,
-											   		  localFieldName)
-								  .endControlFlow()
-							  .endControlFlow()
-								  .beginControlFlow("catch ($T e)", IllegalAccessException.class)
-										.addStatement("// ignore for now")
-								  .endControlFlow();
+							  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
+									  												 localFieldName,
+									  												 ReflectionUtil.class, 
+									  												 className+".class", 
+									  												 fieldName)
+					
+							  .beginControlFlow("if ($L != null)" , localFieldName)
+								.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
+												  setterName,
+										   		  fieldClass,
+										   		  ReflectionUtil.class, 
+										   		  incomingObjectName,
+										   		  localFieldName)
+							  .endControlFlow();
 				});
 				of.addStatement("return newJsonObect")
 				.returns(ClassName.get(packageName, className));
