@@ -52,7 +52,7 @@ Some arguments can be provided to have some influence on the code generation.
 | argument | values | Description |
 | --- | --- | -- |
 |useLombok |true, **false**|Setting useLombok to true generates much less code, because getters and setters can be replace by lombok annotations, just as the constructor(s), toString etc.|
-|fluentAccessors |true, **false**|Creates getters and setters that do not start with *get*, *is* or *set* rather than the actual name of the field. If useLombok is *true*, this setting is passed on to @Accessors(fluent=true|false).|
+|fluentAccessors |true, **false**|Creates getters and setters that do not start with *get*, *is* or *set* rather than the actual name of the field. If useLombok is *true*, this setting is passed on to @Accessors(fluent=true&#124;false).|
 |chainedSetters |**true**, false|Generates setters which return *this*. |
 |prefix | JSON |Adds a prefix to the name of the generated class. Defaults to "JSON"|
 |packageName| |Defines the name of the packacke for the generated class. If no *packageName* is given, this defaults to the package of the annotated class.|
