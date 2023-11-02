@@ -362,7 +362,7 @@ public class JSONClassGenerator implements ClassGenerator {
 					    .builder()
 					    .add("Recreates original object from json object instance,\n")
 					    .add("Calling the setters on the source would lead to an exception and is insecure,\n")
-					    .add("because we cannnot predict if fluent accessors are being used.\n")
+					    .add("because we cannot predict if fluent accessors are being used.\n")
 					    .add("For this reason the getter call is wrapped by reflection.\n\n")
 					    .add("@return the recreated object instance of $L", objectName)
 					    .build())		
