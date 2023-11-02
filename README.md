@@ -186,5 +186,4 @@ At the time being, the dependencies used by *json-mapper* are
 ## Todos
 
 - implement *Builder* for generated classes (non-useLombok)
-- generate *to* method to be able to create and populate annotated class
 - generate methods for annotated class to handle mapping

@@ -51,7 +51,42 @@ public class ReflectionUtil {
 		return variableValue;
 	}
 	
-	
+	/**
+	 * invoke the setter method on the given field to the set value of the field to
+	 * the given value
+	 * 
+	 * @param dest
+	 * @param field
+	 * @param srcValue
+	 * @throws IllegalAccessException
+	 */
+	public static void invokeSetterMethod(final Object dest, final Field field, final Object srcValue)
+			throws IllegalAccessException {
+		/* Set field/variable value using getWriteMethod() */
+		//ConvertUtils.register (new LocalDateTimeConverter (), LocalDateTime.class);
+		PropertyDescriptor objPropertyDescriptor;
+		try {
+			objPropertyDescriptor = new PropertyDescriptor(field.getName(), dest.getClass(), null,
+					"set" + StringUtil.capitalise(field.getName()));
+			objPropertyDescriptor.getWriteMethod().invoke(dest, srcValue);
+		} catch (IntrospectionException | IllegalArgumentException | InvocationTargetException e) {
+			try {
+				objPropertyDescriptor = new PropertyDescriptor(field.getName(), dest.getClass(), null, field.getName());
+				objPropertyDescriptor.getWriteMethod().invoke(dest, srcValue);
+			} catch (IntrospectionException | IllegalArgumentException | InvocationTargetException e1) {
+				// in case, we can set it by reflection...
+				field.setAccessible(true);
+
+				if (field.canAccess(dest)) {
+					field.set(dest, srcValue);
+				} else {
+					logger.error(
+							"Exception occured when writing property for " + dest.getClass() + ", field " + field.getName(),
+							e1);
+				}
+			}
+		}
+	}
 	/**
 	 * @param clazz
 	 * @param fieldName
@@ -85,7 +120,7 @@ public class ReflectionUtil {
 	
 	/**
 	 * return one particular field from the given class
-	 * 
+	 * #
 	 * @param clazz
 	 * @param fieldName
 	 * @return

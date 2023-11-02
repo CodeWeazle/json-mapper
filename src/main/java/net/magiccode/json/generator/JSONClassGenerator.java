@@ -97,9 +97,14 @@ public class JSONClassGenerator implements ClassGenerator {
 					createOfWithArguments(packageName, className, annotationInfo, methods);
 					createOfWithClass(key, packageName, className, annotationInfo, methods);
 					createToJSONString(packageName, className, annotationInfo, methods);	
-					
-					TypeSpec generatedJSONClass = generateClass(annotationInfo, className, packageName, fields, methods);
 
+					// create to method
+					String sourcePackageName = ClassName.get(annotationInfo.element()).packageName();
+					String sourceClassName = ClassName.get(annotationInfo.element()).simpleName();
+					createTo(sourcePackageName, sourceClassName, annotationInfo, methods);
+					
+					// generate and write class
+					TypeSpec generatedJSONClass = generateClass(annotationInfo, className, packageName, fields, methods);
 					JavaFile javaFile = JavaFile.builder(packageName, generatedJSONClass)
 												.indent("    ")
 												.build();
@@ -336,6 +341,72 @@ public class JSONClassGenerator implements ClassGenerator {
 				methods.add(of.build());
 	}
 
+	/**
+	 * Create constructor taking the source class and creating the json mapped class.
+	 * 
+	 * @param key
+	 * @param packageName
+	 * @param className
+	 * @param annotationInfo
+	 * @param methods
+	 */
+	private void createTo(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+		// create of method
+		final String objectName = StringUtil.uncapitalise(className);
+		final ClassName externalClass = ClassName.get(packageName, className);
+		
+		MethodSpec.Builder to = MethodSpec.methodBuilder("to")
+				.addModifiers(Modifier.PUBLIC)
+				.addException(IllegalAccessException.class)
+				.addJavadoc(CodeBlock
+					    .builder()
+					    .add("Recreates original object from json object instance,\n")
+					    .add("Calling the setters on the source would lead to an exception and is insecure,\n")
+					    .add("because we cannnot predict if fluent accessors are being used.\n")
+					    .add("For this reason the getter call is wrapped by reflection.\n\n")
+					    .add("@return the recreated object instance of $L", objectName)
+					    .build())		
+				.addStatement("$T $L = new $T()", externalClass, objectName, externalClass);
+		
+				AtomicInteger fieldCount = new AtomicInteger(0);
+				annotationInfo.fields().stream().filter(field -> ! isMethodFinalPrivateStatic(field))
+												.forEach(field -> {
+						String fieldName = field.getSimpleName().toString();
+						String localFieldName = "field"+fieldCount.getAndIncrement();
+						to
+							  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
+									  												 localFieldName,
+									  												 ReflectionUtil.class, 
+									  												 className+".class", 
+									  												 fieldName)					
+							  .beginControlFlow("if ($L != null)" , localFieldName)
+								.addStatement("$T.invokeSetterMethod($L, $L, $L)",
+										   		  ReflectionUtil.class, 
+										   		  objectName,
+										   		  localFieldName,
+										   		  fieldName)
+							  .endControlFlow();
+				});
+				to.addStatement("return $L", objectName)
+				.returns(ClassName.get(packageName, className));
+				methods.add(to.build());
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	/**
 	 * create field
 	 * 

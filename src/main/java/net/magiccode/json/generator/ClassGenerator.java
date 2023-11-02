@@ -151,7 +151,7 @@ public interface ClassGenerator {
 		// create toSTring method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString")
 				.addModifiers(Modifier.PUBLIC)
-				.addStatement("String stringRep = this.getClass().getName()");
+				.addStatement("$T stringRep = this.getClass().getName()+ \"(\"", String.class);
 		annotationInfo.fields().stream()
 					  .filter(field -> ! isMethodFinalPrivateStatic(field))
 					  .forEach(field -> {
