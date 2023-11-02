@@ -51,4 +51,87 @@ public class ReflectionUtil {
 		return variableValue;
 	}
 	
+	/**
+	 * invoke the setter method on the given field to the set value of the field to
+	 * the given value
+	 * 
+	 * @param dest
+	 * @param field
+	 * @param srcValue
+	 * @throws IllegalAccessException
+	 */
+	public static void invokeSetterMethod(final Object dest, final Field field, final Object srcValue)
+			throws IllegalAccessException {
+		/* Set field/variable value using getWriteMethod() */
+		//ConvertUtils.register (new LocalDateTimeConverter (), LocalDateTime.class);
+		PropertyDescriptor objPropertyDescriptor;
+		try {
+			objPropertyDescriptor = new PropertyDescriptor(field.getName(), dest.getClass(), null,
+					"set" + StringUtil.capitalise(field.getName()));
+			objPropertyDescriptor.getWriteMethod().invoke(dest, srcValue);
+		} catch (IntrospectionException | IllegalArgumentException | InvocationTargetException e) {
+			try {
+				objPropertyDescriptor = new PropertyDescriptor(field.getName(), dest.getClass(), null, field.getName());
+				objPropertyDescriptor.getWriteMethod().invoke(dest, srcValue);
+			} catch (IntrospectionException | IllegalArgumentException | InvocationTargetException e1) {
+				// in case, we can set it by reflection...
+				field.setAccessible(true);
+
+				if (field.canAccess(dest)) {
+					field.set(dest, srcValue);
+				} else {
+					logger.error(
+							"Exception occured when writing property for " + dest.getClass() + ", field " + field.getName(),
+							e1);
+				}
+			}
+		}
+	}
+	/**
+	 * @param clazz
+	 * @param fieldName
+	 * @return
+	 */
+	public final static Field deepGetField(final Class<?> clazz, final String fieldName) {
+		return deepGetField(clazz, fieldName, false);
+	}
+	
+	/**
+	 * @param clazz
+	 * @param fieldName
+	 * @param ignoreMissing
+	 * @return
+	 */
+	public final static Field deepGetField(final Class<?> clazz, final String fieldName, boolean ignoreMissing) {
+		Class<?> entityClass = clazz;
+		Field field = null;
+		try {
+			field = findOneField(entityClass, fieldName);
+			if (field == null && entityClass.getSuperclass() != null) { // we don't want to process Object.class
+				field = deepGetField(entityClass.getSuperclass(), fieldName);
+			}
+		} catch (SecurityException e) {
+			if (! ignoreMissing)
+				logger.error("Exception occured during deep scan of " + clazz.getName() + ", field " + fieldName, e);
+		}
+		return field;
+	}
+
+	
+	/**
+	 * return one particular field from the given class
+	 * #
+	 * @param clazz
+	 * @param fieldName
+	 * @return
+	 */
+	private static Field findOneField(Class<?> clazz, String fieldName) {
+		Field field = null;
+		try {
+			field = clazz.getDeclaredField(fieldName);
+		} catch (NoSuchFieldException | SecurityException e) {
+		}
+		return field;
+	}
+
 }

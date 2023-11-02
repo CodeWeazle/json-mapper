@@ -3,6 +3,7 @@
  */
 package net.magiccode.json.generator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.lang.model.element.TypeElement;
@@ -62,6 +63,13 @@ public class ElementInfo {
 	 */
 	private boolean fluentAccessors;
 	
+	
+	/**
+	 * defines whether or not fields from super-classes are inherited and also 
+	 * generated. 
+	 */
+	private boolean inheritFields;
+	
 	/**
 	 * Allows to specify the value for the <link>@JsonInclude</link> annotation of the 
 	 * generated class. Defaults to Include.ALWAYS,
@@ -76,9 +84,10 @@ public class ElementInfo {
 	private List<VariableElement> fields;
 	
 	/**
-	 * superinterface for generated classes
+	 * interfaces for generated classes
 	 */
-	private ClassName superinterface;
+	@Builder.Default
+	private List<ClassName> interfaces = new ArrayList();
 	
 	/**
 	 * supuerclass for generated classes
@@ -87,4 +96,15 @@ public class ElementInfo {
 	
 	// experimental
 	private boolean useLombok;
+	
+	
+	public void addInterface(ClassName className) {
+		interfaces.add(className);
+	}
+	
+	public boolean hasInterface(ClassName className) {
+		return interfaces().stream().filter(intf-> intf.canonicalName().equals(className.canonicalName())).count()>0;
+	}
+	
+	
 }

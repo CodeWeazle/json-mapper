@@ -23,7 +23,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 						<path>
 							<groupId>net.magiccode.json</groupId>
 							<artifactId>json-mapper</artifactId>
-							<version>0.0.2</version>
+							<version>0.0.3</version>
 						</path>
 						...
 					</annotationProcessorPaths>
@@ -59,8 +59,8 @@ Some arguments can be provided to have some influence on the code generation.
 |subpackageName| |Defines the name for a subpackage added to the default if *packageName* is not specified.|
 |jsonInclude |**ALWAYS**, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS|Generated classes are annotated with *@JsonInclude*. This defaults to ALWAYS, but can be specified otherwise by using the *jsonInclude* argument.|
 |superClass| |Fully qualified name of the superclass that the generated class will extend.|
-|superInterface| |Fully qualified name of the superinterface that the generated class will implement.|
-
+|interfaces| |Comma separated list of fully qualified name of the interfaces that the generated class will implement.|
+|inheritFields|**true**, false|Defines whether or not fields from the super-class hierarchy of the annotated class should be generated. Default is **true**|
 
 ### @JSONTransient
 
@@ -68,7 +68,7 @@ This annotation works on field level and is used to mark fields that will be ann
 
 ```
 @JSONTransient
-private String someField;
+private String ignoredValue;
 ```
 in the annotated class becomes
 ```
@@ -85,7 +85,7 @@ additionally adds the *required = true* argument.
 
 ```
 @JSONRequired
-private Double doubleValue;
+private Double requiredValue;
 ```
 becomes
 ```
@@ -93,7 +93,7 @@ becomes
        value = "double_value",
        required = true
 )
-private Double doubleValue;
+private Double requiredValue;
 ```
 in the generated class.
 
@@ -106,7 +106,7 @@ Fields, of course, will be generated with (at least) @JsonProperty or @JsonIgnor
 
 ### Constructors
 
----- Constructor explanation an fromSource/of methods ----
+---- Constructor explanation an 'of' methods ----
 
 
 ### toJSONString()
@@ -186,10 +186,4 @@ At the time being, the dependencies used by *json-mapper* are
 ## Todos
 
 - implement *Builder* for generated classes (non-useLombok)
-- handle class inheritance properly
-  - pick up fields from superclasses
-  - handle plain vs. hierarchy generation 
-- rename *fromSource* in *of* 
-- generate **mapping** for *useLombok* case
-- generate *to* method to be able to create and populate annotated class
-- generate methods for annotated class to handle mapping
+

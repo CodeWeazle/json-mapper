@@ -5,6 +5,7 @@ package net.magiccode.json;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
@@ -74,13 +76,19 @@ public class JsonMapper extends MapperBase {
 
 		// generate code with collected results
 		try {
-			new JSONClassGenerator(filer, messager, result).generate();
+			new JSONClassGenerator(procEnv, filer, messager, result).generate();
 		} catch (IOException e) {
 			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
 		}
 		return true;
 	}
 
+	/**
+	 * process @JSONMapped annotation
+	 * 
+	 * @param roundEnv
+	 * @param result
+	 */
 	private void processJSONMapped(final RoundEnvironment roundEnv, final Map<ClassName, List<ElementInfo>> result) {
 		
 		// retrieve elements annotated with JSONMapped
@@ -91,64 +99,153 @@ public class JsonMapper extends MapperBase {
 						annotatedElement);
 				continue;
 			}
-		
-			// getting access to the annotation
-			JSONMapped jsonMapped = annotatedElement.getAnnotation(JSONMapped.class);
+			
 			TypeElement typeElement = (TypeElement) annotatedElement;
-			// deriving the name of the class containing the annotation
-			ClassName className = ClassName.get(typeElement);
+			// only execute the following code when the given element has is @JSONMapped
+			JSONMapped jsonMapped = annotatedElement.getAnnotation(JSONMapped.class);
+			if (jsonMapped != null) {
+				generateClassInformation (result, typeElement, jsonMapped);
+			}
+			
+		}
+
+	}
+
 	
+	/**
+	 * collect class information for later generation
+	 * 
+	 * @param result
+	 * @param annotatedElement
+	 */
+	private void generateClassInformation (final Map<ClassName, List<ElementInfo>> result,
+										  TypeElement annotatedElement,
+										  JSONMapped jsonMapped) {
+					
+			/* check for superclass
+			 * 
+			 */
+			TypeElement superClassElement = null;			
+			// deriving the name of the class containing the annotation
+			ClassName className = ClassName.get(annotatedElement);	
 			messager.printMessage(Diagnostic.Kind.NOTE, "Class " + className.canonicalName());
 	
 			if (!result.containsKey(className))
 				result.put(className, new ArrayList<ElementInfo>());
 	
 			if (result.containsKey(className)) {
-	
-				List<VariableElement> fields = ElementFilter.fieldsIn(typeElement.getEnclosedElements());
-	
 				
-				ElementInfoBuilder elementInfoBuiler = ElementInfo.builder().className(className.simpleName()) // the name of the class
-																												// containing the
-																												// annotation
-																			.packageName(jsonMapped.packageName()) // package name of the generated class (optional), default is
-																			// package of annotated class
-																			.subpackageName(jsonMapped.subpackageName()) // subpackage name added to annotated class package if
-																			// packaage name is not given
-																			.prefix(jsonMapped.prefix()) // prefix for generated class, defaults to JSON
-																			.chainedSetters(jsonMapped.chainedSetters()) // true generates "return this" for setters.
-																			.fluentAccessors(jsonMapped.fluentAccessors()).jsonInclude(jsonMapped.jsonInclude()) // defines the
-																												// generated
-																												// value for
-																												// @JsonInclude
-																												// generated.
-																			.element(typeElement) // the current element
-																			.fields(fields) // field descriptions of the annotated class
-																			
-																			.useLombok(jsonMapped.useLombok());
+				/** find fields */
+				List<VariableElement> fields = ElementFilter.fieldsIn(annotatedElement.getEnclosedElements());				
+				/** find typeElement for specified super-classs */
 				
 				
+				if (superClassElement == null)
+					superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());
 				
-				TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());
-				if (superClassElement != null) {
-					elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));
+				if (jsonMapped.inheritFields())
+					addSuperclassFields(annotatedElement, fields);
+				
+				/**
+				 * we have to remember, which interface exists and what needs to be created.
+				 * We use a map for this purpose. Key is the class-name, value the found TypeElement
+				 */
+				final Map<String, TypeElement> interfaces = new HashMap<>();
+				if (jsonMapped.interfaces() != null) {
+					Arrays.asList(jsonMapped.interfaces()).stream().forEach(intf -> {
+						TypeElement interfaceElement = procEnv.getElementUtils().getTypeElement(intf);
+						interfaces.put(intf, interfaceElement);
+					});
 				}
-
-				TypeElement superInterfaceElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superinterface());
-					if (superInterfaceElement != null ) {
-							elementInfoBuiler.superinterface(ClassName.get((TypeElement)superInterfaceElement));
-					}
-				result.get(className).add(elementInfoBuiler.build());
+				
+				ElementInfo elementInfo = createElementInfo(jsonMapped, annotatedElement, className, fields, superClassElement, interfaces);
+				result.get(className).add(elementInfo);
+				
 			}
 
-			List<? extends TypeMirror> list = typeElement.getInterfaces();
-			for (TypeMirror typeMirror : list) {
-				ClassName typeName = getName(typeMirror);
-				System.out.println("Inteface: " + typeName.canonicalName());
-				
+	}
+
+	/**
+	 * recursively add superclass fields
+	 * 
+	 * @param classElement
+	 * @param fields
+	 */
+	private void addSuperclassFields(TypeElement classElement, 
+											List<VariableElement> fields) {
+		
+		TypeMirror superclass = classElement.getSuperclass();
+		// Only act on TypeKind.DECLARED
+		if (superclass != null) { // no supertype, return
+			if (!superclass.getKind().equals(TypeKind.DECLARED)) {
+					return;
+			} else  {				
+				// only generate superclasselement if it does not have a @JSONMapped annotation
+				TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(superclass.toString());
+				if (superClassElement != null /*&& superclass.getAnnotationsByType(JSONMapped.class) == null*/) {
+					ElementFilter.fieldsIn(superClassElement.getEnclosedElements()).stream()
+						.filter(element -> fields.stream().noneMatch(foundField -> foundField.getSimpleName().equals(element.getSimpleName())))
+						.forEach(element -> {
+							fields.add(element);
+						
+						});
+					addSuperclassFields(superClassElement, fields);
+				}
 			}
 		}
-
+	}
+	
+	
+	/**
+	 * create ElementInfo object out of given JSONMapped information, extended by 
+	 * information about the environment like the fields of the annotated class.
+	 * 
+	 * @param jsonMapped
+	 * @param typeElement
+	 * @param className
+	 * @param fields
+	 * @param superClassElement
+	 * @param interfaces
+	 * @return
+	 */
+	private ElementInfo createElementInfo(JSONMapped jsonMapped, TypeElement typeElement, ClassName className,
+			List<VariableElement> fields, TypeElement superClassElement, final Map<String, TypeElement> interfaces) {
+		
+		ElementInfoBuilder elementInfoBuiler = ElementInfo.builder().className(className.simpleName()) // the name of the class
+																										// containing the
+																										// annotation
+																	.packageName(jsonMapped.packageName()) // package name of the generated class (optional), default is
+																	// package of annotated class
+																	.subpackageName(jsonMapped.subpackageName()) // subpackage name added to annotated class package if
+																	// packaage name is not given
+																	.prefix(jsonMapped.prefix()) // prefix for generated class, defaults to JSON
+																	.chainedSetters(jsonMapped.chainedSetters()) // true generates "return this" for setters.
+																	.fluentAccessors(jsonMapped.fluentAccessors()).jsonInclude(jsonMapped.jsonInclude()) // defines the
+																										// generated
+																										// value for
+																										// @JsonInclude
+																										// generated.
+																	.element(typeElement) // the current element
+																	.fields(fields) // field descriptions of the annotated class
+																	.inheritFields(jsonMapped.inheritFields()) // inherit fields from superclasses
+																	.useLombok(jsonMapped.useLombok());
+		// add superclass
+		if (superClassElement != null) {
+			elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));
+		}
+		// add interfaces
+		ElementInfo elementInfo = elementInfoBuiler.build();
+		if (interfaces != null && interfaces.size()>0) {
+			interfaces.entrySet().stream()
+								 // add only existing interfaces
+								 .filter(entry -> entry.getValue() != null)
+								 // use only the TypeElement
+								 .map(entry -> entry.getValue())
+								 .forEach(intf-> {
+									 elementInfo.addInterface(ClassName.get(intf));
+			});
+		}
+		return elementInfo;
 	}
 
 }

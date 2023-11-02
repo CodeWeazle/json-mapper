@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.magiccode.json</groupId>
 	<artifactId>json-mapper</artifactId>
-	<version>0.0.2</version>
+	<version>0.0.3</version>
 	<name>Json Mapper</name>
 	<description>Provides annotations for entity-json mapping generation</description>
 
@@ -64,6 +64,7 @@
 	</dependencies>
 
 	<build>
+		<sourceDirectory>src/main/java</sourceDirectory>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -75,6 +76,7 @@
 					<target>${java.version}</target>
 				</configuration>
 			</plugin>
+			
 		</plugins>
 	</build>
 
