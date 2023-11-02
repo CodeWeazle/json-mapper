@@ -2,14 +2,17 @@ package net.magiccode.json.generator;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -49,13 +52,15 @@ public class JSONClassGenerator implements ClassGenerator {
 	Map<ClassName, List<ElementInfo>> input;
 	Filer filer;
 	Messager messager;
+	ProcessingEnvironment procEnv;
 
 	/**
 	 * @param filer
 	 * @param input
 	 * @param elements
 	 */
-	public JSONClassGenerator(Filer filer,
+	public JSONClassGenerator(ProcessingEnvironment procEnv,
+							  Filer filer,
 							  Messager messager,
 							  Map<ClassName, List<ElementInfo>> input) {
 		this.filer = filer;
@@ -143,7 +148,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
 				fields.add(createFieldSpec(field, fieldClass));
 			}
-		}
+		}		
 	}
 
 	/**
@@ -330,33 +335,44 @@ public class JSONClassGenerator implements ClassGenerator {
 					    .add("@param $L - the incoming object of type $L to be mapped.", incomingObjectName, key.simpleName())
 					    .build());
 		
-				for (VariableElement field : annotationInfo.fields()) {
-					if (!(field.getModifiers().contains(Modifier.FINAL) &&
-						 field.getModifiers().contains(Modifier.PRIVATE) &&
-						 field.getModifiers().contains(Modifier.STATIC))) {
+				AtomicInteger fieldCount = new AtomicInteger(0);
+				annotationInfo.fields().stream().filter(field -> ! isMethodFinalPrivateStatic(field))
+												.forEach(field -> {
+																	
+//				for (VariableElement field : annotationInfo.fields()) {
+//					if (!(field.getModifiers().contains(Modifier.FINAL) &&
+//						 field.getModifiers().contains(Modifier.PRIVATE) &&
+//						 field.getModifiers().contains(Modifier.STATIC))) {
 
 						TypeMirror fieldType = field.asType();
 						TypeName fieldClass = TypeName.get(fieldType);
 						String fieldName = field.getSimpleName().toString();
 						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
-						of.beginControlFlow("try")
-								  .beginControlFlow("if ($L.getClass().getDeclaredField($L) != null)", incomingObjectName, StringUtil.quote(fieldName))								   		
-										.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L.getClass().getDeclaredField($L)))",  
+						String localFieldName = "field"+fieldCount.getAndIncrement();
+						of
+							.beginControlFlow("try")
+								  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
+										  												 localFieldName,
+										  												 ReflectionUtil.class, 
+										  												 className+".class", 
+										  												 fieldName)
+						
+								  .beginControlFlow("if ($L != null)" , localFieldName)
+								  
+//								  .beginControlFlow("if ($L.getClass().getDeclaredField($L) != null)", incomingObjectName, StringUtil.quote(fieldName))								   		
+//									.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L.getClass().getDeclaredField($L)))",  
+									.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
 													  setterName,
 											   		  fieldClass,
 											   		  ReflectionUtil.class, 
 											   		  incomingObjectName,
-											   		  incomingObjectName,
-											   		  StringUtil.quote(fieldName))
+											   		  localFieldName)
 								  .endControlFlow()
-								  .endControlFlow()
-								  .beginControlFlow("catch ($T | $T | $T e)", NoSuchFieldException.class, 
-																			  SecurityException.class,
-																			  IllegalAccessException.class)
-										.addStatement("e.printStackTrace()")
+							  .endControlFlow()
+								  .beginControlFlow("catch ($T e)", IllegalAccessException.class)
+										.addStatement("// ignore for now")
 								  .endControlFlow();
-					}
-			    }
+				});
 				of.addStatement("return newJsonObect")
 				.returns(ClassName.get(packageName, className));
 				methods.add(of.build());
@@ -414,7 +430,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param field
 	 * @return
 	 */
-	private boolean isMethodFinalPrivateStatic(VariableElement field) {
+	private static boolean isMethodFinalPrivateStatic(VariableElement field) {
 		return (field.getModifiers().contains(Modifier.FINAL) &&
 				field.getModifiers().contains(Modifier.PRIVATE) &&
 				field.getModifiers().contains(Modifier.STATIC));

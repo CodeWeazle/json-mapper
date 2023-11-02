@@ -63,6 +63,13 @@ public class ElementInfo {
 	 */
 	private boolean fluentAccessors;
 	
+	
+	/**
+	 * defines whether or not fields from super-classes are inherited and also 
+	 * generated. 
+	 */
+	private boolean inheritFields;
+	
 	/**
 	 * Allows to specify the value for the <link>@JsonInclude</link> annotation of the 
 	 * generated class. Defaults to Include.ALWAYS,

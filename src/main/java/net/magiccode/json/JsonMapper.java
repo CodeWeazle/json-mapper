@@ -76,7 +76,7 @@ public class JsonMapper extends MapperBase {
 
 		// generate code with collected results
 		try {
-			new JSONClassGenerator(filer, messager, result).generate();
+			new JSONClassGenerator(procEnv, filer, messager, result).generate();
 		} catch (IOException e) {
 			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
 		}
@@ -117,21 +117,7 @@ public class JsonMapper extends MapperBase {
 //			/* check for superclass
 //			 * 
 //			 */
-			TypeElement superClassElement = null;
-			TypeMirror superclass = annotatedElement.getSuperclass();
-//			if (superclass != null) { // no supertype, return
-//				if (superclass.getKind().equals(TypeKind.NONE) ||
-//					superclass.getKind().equals(TypeKind.NULL)) {
-//					return;
-//				} else if (superclass.getKind().equals(TypeKind.DECLARED)) {				
-//					// only generate superclasselement if it does not have a @JSONMapped annotation
-//					superClassElement = procEnv.getElementUtils().getTypeElement(superclass.toString());
-//					if (superClassElement != null && superclass.getAnnotationsByType(JSONMapped.class) == null) {
-//						generateClassInformation(result, superClassElement, jsonMapped);
-//					}
-//				}
-//			}
-			
+			TypeElement superClassElement = null;			
 			// deriving the name of the class containing the annotation
 			ClassName className = ClassName.get(annotatedElement);	
 			messager.printMessage(Diagnostic.Kind.NOTE, "Class " + className.canonicalName());
@@ -144,8 +130,14 @@ public class JsonMapper extends MapperBase {
 				/** find fields */
 				List<VariableElement> fields = ElementFilter.fieldsIn(annotatedElement.getEnclosedElements());				
 				/** find typeElement for specified super-classs */
+				
+				
 				if (superClassElement == null)
-					superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());				
+					superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());
+				
+				if (jsonMapped.inheritFields())
+					addSuperclassFields(annotatedElement, fields);
+				
 				/**
 				 * we have to remember, which interface exists and what needs to be created.
 				 * We use a map for this purpose. Key is the class-name, value the found TypeElement
@@ -164,6 +156,36 @@ public class JsonMapper extends MapperBase {
 			}
 
 	}
+
+	/**
+	 * recursively add superclass fields
+	 * 
+	 * @param classElement
+	 * @param fields
+	 */
+	private void addSuperclassFields(TypeElement classElement, 
+											List<VariableElement> fields) {
+		
+		TypeMirror superclass = classElement.getSuperclass();
+		// Only act on TypeKind.DECLARED
+		if (superclass != null) { // no supertype, return
+			if (!superclass.getKind().equals(TypeKind.DECLARED)) {
+					return;
+			} else  {				
+				// only generate superclasselement if it does not have a @JSONMapped annotation
+				TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(superclass.toString());
+				if (superClassElement != null /*&& superclass.getAnnotationsByType(JSONMapped.class) == null*/) {
+					ElementFilter.fieldsIn(superClassElement.getEnclosedElements()).stream()
+						.filter(element -> fields.stream().noneMatch(foundField -> foundField.getSimpleName().equals(element.getSimpleName())))
+						.forEach(element -> {
+							fields.add(element);
+						
+						});
+					addSuperclassFields(superClassElement, fields);
+				}
+			}
+		}
+	}
 	
 	
 	/**
@@ -177,6 +199,7 @@ public class JsonMapper extends MapperBase {
 	 */
 	private ElementInfo createElementInfo(JSONMapped jsonMapped, TypeElement typeElement, ClassName className,
 			List<VariableElement> fields, TypeElement superClassElement, final Map<String, TypeElement> interfaces) {
+		
 		ElementInfoBuilder elementInfoBuiler = ElementInfo.builder().className(className.simpleName()) // the name of the class
 																										// containing the
 																										// annotation
@@ -193,7 +216,7 @@ public class JsonMapper extends MapperBase {
 																										// generated.
 																	.element(typeElement) // the current element
 																	.fields(fields) // field descriptions of the annotated class
-																	
+																	.inheritFields(jsonMapped.inheritFields()) // inherit fields from superclasses
 																	.useLombok(jsonMapped.useLombok());
 		
 		if (superClassElement != null) {

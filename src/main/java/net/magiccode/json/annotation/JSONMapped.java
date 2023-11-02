@@ -37,4 +37,5 @@ public @interface JSONMapped {
 	
 	String[] interfaces() default{};
 	
+	boolean inheritFields() default true;
 }
