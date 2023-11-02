@@ -228,24 +228,24 @@ public class JSONClassGenerator implements ClassGenerator {
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString")
 				.addModifiers(Modifier.PUBLIC)
 				.addStatement("String stringRep = this.getClass().getName()");
-				for (VariableElement field : annotationInfo.fields()) {
-					if (!isMethodFinalPrivateStatic(field)) {
-						String fieldName = field.getSimpleName().toString();
-						String statement = "stringRep += \"$L=\"+$L";
-						if(field != annotationInfo.fields().get(annotationInfo.fields().size() - 1))
-							statement += "+\", \""; 
-						toStringBuilder.addStatement(statement, fieldName, fieldName);
-					}
-				}
-				toStringBuilder.addStatement("stringRep += \")\"")
-								.addStatement("return stringRep")
-								.addJavadoc(CodeBlock
-									    .builder()
-									    .add("All field as a comma-separated list.\n")
-									    .build());
-				
-				toStringBuilder.returns(ClassName.get(String.class));
-				methods.add(toStringBuilder.build());
+		annotationInfo.fields().stream()
+					  .filter(field -> ! isMethodFinalPrivateStatic(field))
+					  .forEach(field -> {
+				String fieldName = field.getSimpleName().toString();
+				String statement = "stringRep += \"$L=\"+$L";
+				if(field != annotationInfo.fields().get(annotationInfo.fields().size() - 1))
+					statement += "+\", \""; 
+				toStringBuilder.addStatement(statement, fieldName, fieldName);
+		});
+		toStringBuilder.addStatement("stringRep += \")\"")
+						.addStatement("return stringRep")
+						.addJavadoc(CodeBlock
+							    .builder()
+							    .add("All field as a comma-separated list.\n")
+							    .build());
+		
+		toStringBuilder.returns(ClassName.get(String.class));
+		methods.add(toStringBuilder.build());
 	}
 	
 	/**
@@ -289,19 +289,20 @@ public class JSONClassGenerator implements ClassGenerator {
 					    .builder()
 					    .add("Creates object with all given values, acts basically as a AllArgsConstructor.\n")
 					    .build());
-				for (VariableElement field : annotationInfo.fields()) {
-					if (!isMethodFinalPrivateStatic(field)) {
+				annotationInfo.fields().stream()
+							  .filter(field -> ! isMethodFinalPrivateStatic(field))
+							  .forEach(field -> {
+
 						TypeMirror fieldType = field.asType();
 						TypeName fieldClass = TypeName.get(fieldType);
 						of.addParameter(fieldClass ,field.getSimpleName().toString(), new Modifier[0]);
-					}
-				};
-				for (VariableElement field : annotationInfo.fields()) {
-					if (!isMethodFinalPrivateStatic(field)) {						
+				});
+				annotationInfo.fields().stream()
+					  .filter(field -> ! isMethodFinalPrivateStatic(field))
+					  .forEach(field -> {
 						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
 						of.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());
-					}
-			    }
+			    });
 				of.addStatement("return newJsonObect")
 				
 				.returns(ClassName.get(packageName, className));
@@ -338,12 +339,6 @@ public class JSONClassGenerator implements ClassGenerator {
 				AtomicInteger fieldCount = new AtomicInteger(0);
 				annotationInfo.fields().stream().filter(field -> ! isMethodFinalPrivateStatic(field))
 												.forEach(field -> {
-																	
-//				for (VariableElement field : annotationInfo.fields()) {
-//					if (!(field.getModifiers().contains(Modifier.FINAL) &&
-//						 field.getModifiers().contains(Modifier.PRIVATE) &&
-//						 field.getModifiers().contains(Modifier.STATIC))) {
-
 						TypeMirror fieldType = field.asType();
 						TypeName fieldClass = TypeName.get(fieldType);
 						String fieldName = field.getSimpleName().toString();
@@ -358,9 +353,6 @@ public class JSONClassGenerator implements ClassGenerator {
 										  												 fieldName)
 						
 								  .beginControlFlow("if ($L != null)" , localFieldName)
-								  
-//								  .beginControlFlow("if ($L.getClass().getDeclaredField($L) != null)", incomingObjectName, StringUtil.quote(fieldName))								   		
-//									.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L.getClass().getDeclaredField($L)))",  
 									.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
 													  setterName,
 											   		  fieldClass,
