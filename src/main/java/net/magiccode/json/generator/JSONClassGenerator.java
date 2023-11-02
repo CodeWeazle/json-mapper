@@ -299,8 +299,10 @@ public class JSONClassGenerator implements ClassGenerator {
 		
 		MethodSpec.Builder of = MethodSpec.methodBuilder("of")
 				.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-				//.addParameter(key, incomingObjectName, new Modifier[0])
-				.addParameter(ClassName.get(Object.class), incomingObjectName, new Modifier[0])
+				.addParameter(key, incomingObjectName, new Modifier[0])
+				
+				//.addParameter(ClassName.get(Object.class), incomingObjectName, new Modifier[0])
+				
 				.addStatement(className +" newJsonObect = new "+className+"()")
 				.addException(IllegalAccessException.class)
 
@@ -418,7 +420,8 @@ public class JSONClassGenerator implements ClassGenerator {
 	public FieldSpec createFieldSpec(VariableElement field, TypeName fieldClass) {
 
 		FieldSpec fieldspec = null;
-		if (field.getAnnotation(JSONTransient.class) == null) {			
+		if (field.getAnnotation(JSONTransient.class) == null && 
+			field.getAnnotation(JsonIgnore.class) == null) {			
 			AnnotationSpec.Builder jsonPropertyAnnotationBuilder = AnnotationSpec.builder(JsonProperty.class)
 					.addMember("value", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
 			if(field.getAnnotation(JSONRequired.class) != null) {

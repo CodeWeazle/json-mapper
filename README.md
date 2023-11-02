@@ -65,6 +65,7 @@ Some arguments can be provided to have some influence on the code generation.
 ### @JSONTransient
 
 This annotation works on field level and is used to mark fields that will be annotated with *@JsonIgnore* in the generated code.
+(Fields already annotated with *@JsonIgnore* can omit this annotation, because *@JsonIgnore* is picked up as well.)  
 
 ```
 @JSONTransient
