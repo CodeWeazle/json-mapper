@@ -60,7 +60,7 @@ Some arguments can be provided to have some influence on the code generation.
 |jsonInclude |**ALWAYS**, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS|Generated classes are annotated with *@JsonInclude*. This defaults to ALWAYS, but can be specified otherwise by using the *jsonInclude* argument.|
 |superClass| |Fully qualified name of the superclass that the generated class will extend.|
 |interfaces| |Comma separated list of fully qualified name of the superinterface that the generated class will implement.|
-
+|inheritFields|**true**, false|Defines whether or not field from superclasses of the annotated class should be generated. Default is **true**|
 
 ### @JSONTransient
 
