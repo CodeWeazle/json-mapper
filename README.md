@@ -68,7 +68,7 @@ This annotation works on field level and is used to mark fields that will be ann
 
 ```
 @JSONTransient
-private String someField;
+private String ignoredValue;
 ```
 in the annotated class becomes
 ```
@@ -85,7 +85,7 @@ additionally adds the *required = true* argument.
 
 ```
 @JSONRequired
-private Double doubleValue;
+private Double requiredValue;
 ```
 becomes
 ```
@@ -93,7 +93,7 @@ becomes
        value = "double_value",
        required = true
 )
-private Double doubleValue;
+private Double requiredValue;
 ```
 in the generated class.
 
