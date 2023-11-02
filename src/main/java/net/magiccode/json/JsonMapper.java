@@ -95,7 +95,11 @@ public class JsonMapper extends MapperBase {
 			}
 			
 			TypeElement typeElement = (TypeElement) annotatedElement;
-			generateClassInformation (result, typeElement);
+			// only execute the following code when the given element has is @JSONMapped
+			JSONMapped jsonMapped = annotatedElement.getAnnotation(JSONMapped.class);
+			if (jsonMapped != null) {
+				generateClassInformation (result, typeElement, jsonMapped);
+			}
 			
 		}
 
@@ -107,24 +111,24 @@ public class JsonMapper extends MapperBase {
 	 * @param annotatedElement
 	 */
 	private void generateClassInformation (final Map<ClassName, List<ElementInfo>> result,
-										  TypeElement annotatedElement) {
-		
-		// only execute the following code when the given element has is @JSONMapped
-		JSONMapped jsonMapped = annotatedElement.getAnnotation(JSONMapped.class);
-		if (jsonMapped != null) {
-		
+										  TypeElement annotatedElement,
+										  JSONMapped jsonMapped) {
+					
 //			/* check for superclass
 //			 * 
 //			 */
-//			TypeMirror superclass = annotatedElement.getSuperclass();
+			TypeElement superClassElement = null;
+			TypeMirror superclass = annotatedElement.getSuperclass();
 //			if (superclass != null) { // no supertype, return
 //				if (superclass.getKind().equals(TypeKind.NONE) ||
 //					superclass.getKind().equals(TypeKind.NULL)) {
 //					return;
 //				} else if (superclass.getKind().equals(TypeKind.DECLARED)) {				
-//					TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(superclass.toString());
-//					if (superClassElement != null)
-//						generateClassInformation(result, superClassElement);
+//					// only generate superclasselement if it does not have a @JSONMapped annotation
+//					superClassElement = procEnv.getElementUtils().getTypeElement(superclass.toString());
+//					if (superClassElement != null && superclass.getAnnotationsByType(JSONMapped.class) == null) {
+//						generateClassInformation(result, superClassElement, jsonMapped);
+//					}
 //				}
 //			}
 			
@@ -140,7 +144,8 @@ public class JsonMapper extends MapperBase {
 				/** find fields */
 				List<VariableElement> fields = ElementFilter.fieldsIn(annotatedElement.getEnclosedElements());				
 				/** find typeElement for specified super-classs */
-				TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());				
+				if (superClassElement == null)
+					superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());				
 				/**
 				 * we have to remember, which interface exists and what needs to be created.
 				 * We use a map for this purpose. Key is the class-name, value the found TypeElement
@@ -157,7 +162,6 @@ public class JsonMapper extends MapperBase {
 				result.get(className).add(elementInfo);
 				
 			}
-		}
 
 	}
 	

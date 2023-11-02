@@ -42,7 +42,7 @@ import net.magiccode.json.util.ReflectionUtil;
 import net.magiccode.json.util.StringUtil;
 
 /**
- * 
+ * Generate a copy 
  */
 public class JSONClassGenerator implements ClassGenerator {
 
@@ -89,8 +89,8 @@ public class JSONClassGenerator implements ClassGenerator {
 						createFieldsGettersAndSetters(annotationInfo, fields, methods);
 						createToString(packageName, className, annotationInfo, methods);
 					}
-					createFromSourceWithArguments(packageName, className, annotationInfo, methods);
-					createFromSourceWithClass(key, packageName, className, annotationInfo, methods);
+					createOfWithArguments(packageName, className, annotationInfo, methods);
+					createOfWithClass(key, packageName, className, annotationInfo, methods);
 					createToJSONString(packageName, className, annotationInfo, methods);	
 					
 					TypeSpec generatedJSONClass = generateClass(annotationInfo, className, packageName, fields, methods);
@@ -115,9 +115,7 @@ public class JSONClassGenerator implements ClassGenerator {
 			List<MethodSpec> methods) {
 		// Generate fields, getters and setters
 		for (VariableElement field : annotationInfo.fields()) {
-			if (!(field.getModifiers().contains(Modifier.FINAL) &&
-				 field.getModifiers().contains(Modifier.PRIVATE) &&
-				 field.getModifiers().contains(Modifier.STATIC))) {
+			if (!isMethodFinalPrivateStatic(field)) {
 
 				TypeMirror fieldType = field.asType();
 				TypeName fieldClass = TypeName.get(fieldType);
@@ -139,9 +137,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	private void createFields(ElementInfo annotationInfo, List<FieldSpec> fields) {
 		// Generate fields
 		for (VariableElement field : annotationInfo.fields()) {
-			if (!(field.getModifiers().contains(Modifier.FINAL) &&
-				 field.getModifiers().contains(Modifier.PRIVATE) &&
-				 field.getModifiers().contains(Modifier.STATIC))) {
+			if (!isMethodFinalPrivateStatic(field)) {
 				TypeMirror fieldType = field.asType();
 				TypeName fieldClass = TypeName.get(fieldType);
 				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
@@ -228,9 +224,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				.addModifiers(Modifier.PUBLIC)
 				.addStatement("String stringRep = this.getClass().getName()");
 				for (VariableElement field : annotationInfo.fields()) {
-					if (!(field.getModifiers().contains(Modifier.FINAL) &&
-						 field.getModifiers().contains(Modifier.PRIVATE) &&
-						 field.getModifiers().contains(Modifier.STATIC))) {
+					if (!isMethodFinalPrivateStatic(field)) {
 						String fieldName = field.getSimpleName().toString();
 						String statement = "stringRep += \"$L=\"+$L";
 						if(field != annotationInfo.fields().get(annotationInfo.fields().size() - 1))
@@ -281,9 +275,9 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param annotationInfo
 	 * @param methods
 	 */
-	private void createFromSourceWithArguments(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
-		// create fromSource method
-		MethodSpec.Builder fromSource = MethodSpec.methodBuilder("fromSource")
+	private void createOfWithArguments(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+		// create of method
+		MethodSpec.Builder of = MethodSpec.methodBuilder("of")
 				.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
 				.addStatement(className+" newJsonObect = new "+className+"();")
 				.addJavadoc(CodeBlock
@@ -291,27 +285,22 @@ public class JSONClassGenerator implements ClassGenerator {
 					    .add("Creates object with all given values, acts basically as a AllArgsConstructor.\n")
 					    .build());
 				for (VariableElement field : annotationInfo.fields()) {
-					if (!(field.getModifiers().contains(Modifier.FINAL) &&
-						 field.getModifiers().contains(Modifier.PRIVATE) &&
-						 field.getModifiers().contains(Modifier.STATIC))) {
+					if (!isMethodFinalPrivateStatic(field)) {
 						TypeMirror fieldType = field.asType();
 						TypeName fieldClass = TypeName.get(fieldType);
-						fromSource.addParameter(fieldClass ,field.getSimpleName().toString(), new Modifier[0]);
+						of.addParameter(fieldClass ,field.getSimpleName().toString(), new Modifier[0]);
 					}
 				};
 				for (VariableElement field : annotationInfo.fields()) {
-					if (!(field.getModifiers().contains(Modifier.FINAL) &&
-						 field.getModifiers().contains(Modifier.PRIVATE) &&
-						 field.getModifiers().contains(Modifier.STATIC))) {
-						
+					if (!isMethodFinalPrivateStatic(field)) {						
 						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
-						fromSource.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());
+						of.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());
 					}
 			    }
-				fromSource.addStatement("return newJsonObect")
+				of.addStatement("return newJsonObect")
 				
 				.returns(ClassName.get(packageName, className));
-				methods.add(fromSource.build());
+				methods.add(of.build());
 	}
 	
 	/**
@@ -323,11 +312,11 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param annotationInfo
 	 * @param methods
 	 */
-	private void createFromSourceWithClass(ClassName key, String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
-		// create fromSource method
+	private void createOfWithClass(ClassName key, String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+		// create of method
 		String incomingObjectName = "incoming"+key.simpleName();
 		
-		MethodSpec.Builder fromSource = MethodSpec.methodBuilder("fromSource")
+		MethodSpec.Builder of = MethodSpec.methodBuilder("of")
 				.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
 				//.addParameter(key, incomingObjectName, new Modifier[0])
 				.addParameter(ClassName.get(Object.class), incomingObjectName, new Modifier[0])
@@ -350,7 +339,7 @@ public class JSONClassGenerator implements ClassGenerator {
 						TypeName fieldClass = TypeName.get(fieldType);
 						String fieldName = field.getSimpleName().toString();
 						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
-						fromSource.beginControlFlow("try")
+						of.beginControlFlow("try")
 								  .beginControlFlow("if ($L.getClass().getDeclaredField($L) != null)", incomingObjectName, StringUtil.quote(fieldName))								   		
 										.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L.getClass().getDeclaredField($L)))",  
 													  setterName,
@@ -368,9 +357,9 @@ public class JSONClassGenerator implements ClassGenerator {
 								  .endControlFlow();
 					}
 			    }
-				fromSource.addStatement("return newJsonObect")
+				of.addStatement("return newJsonObect")
 				.returns(ClassName.get(packageName, className));
-				methods.add(fromSource.build());
+				methods.add(of.build());
 	}
 
 	/**
@@ -421,6 +410,15 @@ public class JSONClassGenerator implements ClassGenerator {
 		return packageName;
 	}
 
+	/**
+	 * @param field
+	 * @return
+	 */
+	private boolean isMethodFinalPrivateStatic(VariableElement field) {
+		return (field.getModifiers().contains(Modifier.FINAL) &&
+				field.getModifiers().contains(Modifier.PRIVATE) &&
+				field.getModifiers().contains(Modifier.STATIC));
+	}
 
 	
 }
