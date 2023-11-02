@@ -119,8 +119,9 @@ public class JSONClassGenerator implements ClassGenerator {
 	private void createFieldsGettersAndSetters(ElementInfo annotationInfo, List<FieldSpec> fields,
 			List<MethodSpec> methods) {
 		// Generate fields, getters and setters
-		for (VariableElement field : annotationInfo.fields()) {
-			if (!isMethodFinalPrivateStatic(field)) {
+		annotationInfo.fields().stream()
+					  .filter(field -> ! isMethodFinalPrivateStatic(field))
+					  .forEach(field -> {
 
 				TypeMirror fieldType = field.asType();
 				TypeName fieldClass = TypeName.get(fieldType);
@@ -129,26 +130,27 @@ public class JSONClassGenerator implements ClassGenerator {
 				fields.add(createFieldSpec(field, fieldClass));
 				methods.add(createGetterMethodSpec(field, fieldClass, annotationInfo));
 				methods.add(createSetterMethodSpec(field, annotationInfo));
-			}
-		}
+		});
 	}
 
 	
 	/**
+	 * create fields
+	 * 
 	 * @param annotationInfo
 	 * @param fields
 	 * @param methods
 	 */
 	private void createFields(ElementInfo annotationInfo, List<FieldSpec> fields) {
 		// Generate fields
-		for (VariableElement field : annotationInfo.fields()) {
-			if (!isMethodFinalPrivateStatic(field)) {
+		annotationInfo.fields().stream()
+		  .filter(field -> ! isMethodFinalPrivateStatic(field))
+		  .forEach(field -> {
 				TypeMirror fieldType = field.asType();
 				TypeName fieldClass = TypeName.get(fieldType);
 				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
 				fields.add(createFieldSpec(field, fieldClass));
-			}
-		}		
+		});		
 	}
 
 	/**
@@ -214,38 +216,6 @@ public class JSONClassGenerator implements ClassGenerator {
 		messager.printMessage(Diagnostic.Kind.NOTE,"Generated " + className);
 
 		return generatedJSONClass;
-	}
-	
-	/**
-	 * generate toString method
-	 * @param packageName
-	 * @param className
-	 * @param annotationInfo
-	 * @param methods
-	 */
-	private void createToString(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
-		// create toSTring method
-		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString")
-				.addModifiers(Modifier.PUBLIC)
-				.addStatement("String stringRep = this.getClass().getName()");
-		annotationInfo.fields().stream()
-					  .filter(field -> ! isMethodFinalPrivateStatic(field))
-					  .forEach(field -> {
-				String fieldName = field.getSimpleName().toString();
-				String statement = "stringRep += \"$L=\"+$L";
-				if(field != annotationInfo.fields().get(annotationInfo.fields().size() - 1))
-					statement += "+\", \""; 
-				toStringBuilder.addStatement(statement, fieldName, fieldName);
-		});
-		toStringBuilder.addStatement("stringRep += \")\"")
-						.addStatement("return stringRep")
-						.addJavadoc(CodeBlock
-							    .builder()
-							    .add("All field as a comma-separated list.\n")
-							    .build());
-		
-		toStringBuilder.returns(ClassName.get(String.class));
-		methods.add(toStringBuilder.build());
 	}
 	
 	/**
@@ -407,7 +377,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param annotationInfo
 	 * @return
 	 */
-	private String generatePackageName(ClassName key, ElementInfo annotationInfo) {
+	final protected String generatePackageName(ClassName key, ElementInfo annotationInfo) {
 		String packageName = annotationInfo.packageName();
 		if (StringUtil.isBlank(packageName)) {
 			packageName = key.packageName();
@@ -416,16 +386,6 @@ public class JSONClassGenerator implements ClassGenerator {
 			}
 		}
 		return packageName;
-	}
-
-	/**
-	 * @param field
-	 * @return
-	 */
-	private static boolean isMethodFinalPrivateStatic(VariableElement field) {
-		return (field.getModifiers().contains(Modifier.FINAL) &&
-				field.getModifiers().contains(Modifier.PRIVATE) &&
-				field.getModifiers().contains(Modifier.STATIC));
 	}
 
 	

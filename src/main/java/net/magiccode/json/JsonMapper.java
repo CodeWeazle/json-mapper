@@ -83,6 +83,12 @@ public class JsonMapper extends MapperBase {
 		return true;
 	}
 
+	/**
+	 * process @JSONMapped annotation
+	 * 
+	 * @param roundEnv
+	 * @param result
+	 */
 	private void processJSONMapped(final RoundEnvironment roundEnv, final Map<ClassName, List<ElementInfo>> result) {
 		
 		// retrieve elements annotated with JSONMapped
@@ -107,6 +113,8 @@ public class JsonMapper extends MapperBase {
 
 	
 	/**
+	 * collect class information for later generation
+	 * 
 	 * @param result
 	 * @param annotatedElement
 	 */
@@ -114,9 +122,9 @@ public class JsonMapper extends MapperBase {
 										  TypeElement annotatedElement,
 										  JSONMapped jsonMapped) {
 					
-//			/* check for superclass
-//			 * 
-//			 */
+			/* check for superclass
+			 * 
+			 */
 			TypeElement superClassElement = null;			
 			// deriving the name of the class containing the annotation
 			ClassName className = ClassName.get(annotatedElement);	
@@ -189,6 +197,9 @@ public class JsonMapper extends MapperBase {
 	
 	
 	/**
+	 * create ElementInfo object out of given JSONMapped information, extended by 
+	 * information about the environment like the fields of the annotated class.
+	 * 
 	 * @param jsonMapped
 	 * @param typeElement
 	 * @param className
@@ -218,7 +229,7 @@ public class JsonMapper extends MapperBase {
 																	.fields(fields) // field descriptions of the annotated class
 																	.inheritFields(jsonMapped.inheritFields()) // inherit fields from superclasses
 																	.useLombok(jsonMapped.useLombok());
-		
+		// add superclass
 		if (superClassElement != null) {
 			elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));
 		}

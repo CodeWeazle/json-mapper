@@ -8,6 +8,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
@@ -135,5 +136,52 @@ public interface ClassGenerator {
 		} else {			
 			return "set"+StringUtil.capitalise(fieldName);
 		}
-	}	
+	}
+	
+	
+	/**
+	 * generate toString method
+	 * 
+	 * @param packageName
+	 * @param className
+	 * @param annotationInfo
+	 * @param methods
+	 */
+	default void createToString(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+		// create toSTring method
+		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString")
+				.addModifiers(Modifier.PUBLIC)
+				.addStatement("String stringRep = this.getClass().getName()");
+		annotationInfo.fields().stream()
+					  .filter(field -> ! isMethodFinalPrivateStatic(field))
+					  .forEach(field -> {
+				String fieldName = field.getSimpleName().toString();
+				String statement = "stringRep += \"$L=\"+$L";
+				if(field != annotationInfo.fields().get(annotationInfo.fields().size() - 1))
+					statement += "+\", \""; 
+				toStringBuilder.addStatement(statement, fieldName, fieldName);
+		});
+		toStringBuilder.addStatement("stringRep += \")\"")
+						.addStatement("return stringRep")
+						.addJavadoc(CodeBlock
+							    .builder()
+							    .add("All fields as a comma-separated list.\n")
+							    .build());
+		
+		toStringBuilder.returns(ClassName.get(String.class));
+		methods.add(toStringBuilder.build());
+	}
+
+	/**
+	 * check if field is declared as
+	 * final static private
+	 * 
+	 * @param field
+	 * @return
+	 */
+	default boolean isMethodFinalPrivateStatic(VariableElement field) {
+		return (field.getModifiers().contains(Modifier.FINAL) &&
+				field.getModifiers().contains(Modifier.PRIVATE) &&
+				field.getModifiers().contains(Modifier.STATIC));
+	}
 }
