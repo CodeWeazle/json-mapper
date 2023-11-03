@@ -139,7 +139,7 @@
 					</execution>
 				</executions>
 			</plugin>
-<!--
+			<!--
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
@@ -156,25 +156,35 @@
 			</plugin>
 -->
 			<plugin>
-		      <groupId>org.apache.maven.plugins</groupId>
-		      <artifactId>maven-gpg-plugin</artifactId>
-		      <version>1.5</version>
-		      <executions>
-		        <execution>
-		          <id>sign-artifacts</id>
-		          <phase>verify</phase>
-		          <goals>
-		            <goal>sign</goal>
-		          </goals>
-		          <configuration>
-		            <keyname>CDB4C379E59BDB0637A37786E38088ACA8297A36</keyname>
-		            <passphraseServerId>CDB4C379E59BDB0637A37786E38088ACA8297A36</passphraseServerId>
-		          </configuration>
-		        </execution>
-		      </executions>
-		    </plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.5</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+						<configuration>
+							<keyname>CDB4C379E59BDB0637A37786E38088ACA8297A36</keyname>
+							<passphraseServerId>
+								CDB4C379E59BDB0637A37786E38088ACA8297A36</passphraseServerId>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 
-
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.6</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>nexus</serverId>
+					<nexusUrl>http://localhost:8081/nexus/</nexusUrl>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -193,12 +203,12 @@
 	</reporting>
 
 	<distributionManagement>
-	    <repository>
-	      <id>maven-central</id>
-	      <name>Central Repository OSSRH</name>
-	      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-	    </repository>
-	 </distributionManagement>
+		<repository>
+			<id>maven-central</id>
+			<name>Central Repository OSSRH</name>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
 
 	<licenses>
 		<license>
