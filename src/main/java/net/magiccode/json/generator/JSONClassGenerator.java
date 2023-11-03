@@ -74,7 +74,9 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
-	 * @throws IOException
+	 * start the generation process
+	 * 
+	 * @throws IOException if file cannot be written
 	 */
 	public void generate() throws IOException {
 
@@ -97,11 +99,11 @@ public class JSONClassGenerator implements ClassGenerator {
 					} else { // otherwise, we also need getters and setters
 						createNoArgsConstructor(packageName, className, methods);
 						createFieldsGettersAndSetters(annotationInfo, fields, methods);
-						createToString(packageName, className, annotationInfo, methods);
+						createToString(annotationInfo, methods);
 					}
 					createOfWithArguments(packageName, className, annotationInfo, methods);
 					createOfWithClass(key, packageName, className, annotationInfo, methods);
-					createToJSONString(packageName, className, annotationInfo, methods);	
+					createToJSONString(methods);	
 
 					// create to method
 					String sourcePackageName = ClassName.get(annotationInfo.element()).packageName();
@@ -122,9 +124,11 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
-	 * @param annotationInfo
-	 * @param fields
-	 * @param methods
+	 * creates gields, getters and setters for the given fields.
+	 * 
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param fields - list of fields to be created.
+	 * @param methods - list of methods to be created
 	 */
 	private void createFieldsGettersAndSetters(ElementInfo annotationInfo, List<FieldSpec> fields,
 			List<MethodSpec> methods) {
@@ -145,10 +149,10 @@ public class JSONClassGenerator implements ClassGenerator {
 
 	
 	/**
-	 * create fields
+	 * create field only. This is useful for useLombok=true cases. 
 	 * 
-	 * @param annotationInfo
-	 * @param fields
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param fields - list of fields to be created.
 	 */
 	private void createFields(ElementInfo annotationInfo, List<FieldSpec> fields) {
 		// Generate fields
@@ -165,12 +169,12 @@ public class JSONClassGenerator implements ClassGenerator {
 	/**
 	 * Generate the class code with given fields and methods
 	 * 
-	 * @param annotationInfo
-	 * @param className
-	 * @param packageName
-	 * @param fields
-	 * @param methods
-	 * @return typeSpec object containing the newly generated class
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param className - class name of the class to be created
+	 * @param packageName - the package the class to be created shall be located in.
+	 * @param fields - list of fields to be created
+	 * @param methods - list of methods to be created
+	 * @return typeSpec - object containing the newly generated class
 	 */
 	public TypeSpec generateClass(ElementInfo annotationInfo, 
 								   String className, 
@@ -229,12 +233,10 @@ public class JSONClassGenerator implements ClassGenerator {
 	
 	/**
 	 * generate toString method
-	 * @param packageName
-	 * @param className
-	 * @param annotationInfo
-	 * @param methods
+	 * 
+	 * @param methods - list of methods to be creatd.
 	 */
-	private void createToJSONString(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+	private void createToJSONString(List<MethodSpec> methods) {
 		// create toJSONString method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toJSONString")
 				.addModifiers(Modifier.PUBLIC)
@@ -254,6 +256,9 @@ public class JSONClassGenerator implements ClassGenerator {
 	
 	
 	/**
+	 * generates an <i>of</i>-method with all fields as arguments. Acts basically like an 
+	 * @see AllArgsConstructor	 * generates an <i>of</i>-method with all fields as arguments. Acts basically like an 
+	 * 
 	 * @param packageName
 	 * @param className
 	 * @param annotationInfo
@@ -289,7 +294,8 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 	
 	/**
-	 * Create constructor taking the source class and creating the json mapped class.
+	 * generates an <i>of</i>-method which takes the annotated class as an argument
+	 * and returns an instance of the generated class with copies of all fields
 	 * 
 	 * @param key
 	 * @param packageName
@@ -304,8 +310,6 @@ public class JSONClassGenerator implements ClassGenerator {
 		MethodSpec.Builder of = MethodSpec.methodBuilder("of")
 				.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
 				.addParameter(key, incomingObjectName, new Modifier[0])
-				
-				//.addParameter(ClassName.get(Object.class), incomingObjectName, new Modifier[0])
 				
 				.addStatement(className +" newJsonObect = new "+className+"()")
 				.addException(IllegalAccessException.class)
@@ -348,7 +352,8 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
-	 * Create constructor taking the source class and creating the json mapped class.
+	 * generates a <i>to</i>-method which returns an instance of the annotated class with
+	 * copies of all field values. 
 	 * 
 	 * @param packageName
 	 * @param className
@@ -432,6 +437,8 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
+	 * generates the package name base on the given annotation arguments
+	 * 
 	 * @param key
 	 * @param annotationInfo
 	 * @return

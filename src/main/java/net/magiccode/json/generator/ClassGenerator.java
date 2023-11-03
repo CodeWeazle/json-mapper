@@ -85,6 +85,7 @@ public interface ClassGenerator {
 
 	/**
 	 * create getter method
+	 * 
 	 * @param field
 	 * @param fieldClass
 	 * @return
@@ -116,10 +117,13 @@ public interface ClassGenerator {
 	}
 
 	/**
-	 * @param annotationInfo
-	 * @param fieldName
-	 * @param isBoolean
-	 * @return
+	 * generate a name for the field's getter method according to the specified method.
+	 * (fluent or not)
+	 * 
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param fieldName - name of the field to create the setter's name for
+	 * @param isBoolean - flag to decide whether to use 'is' or 'get'
+	 * @return the generated name for the getter
 	 */
 	default String generateGetterName(ElementInfo annotationInfo, String fieldName, Boolean isBoolean) {
 		if (annotationInfo.fluentAccessors()) {
@@ -130,9 +134,12 @@ public interface ClassGenerator {
 	}
 	
 	/**
-	 * @param annotationInfo
-	 * @param fieldName
-	 * @return
+	 * generate a name for the field's setter method according to the specified method.
+	 * (fluent or not)
+	 * 
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param fieldName - name of the field to create the setter's name for
+	 * @return the generated setter name
 	 */
 	default String generateSetterName(ElementInfo annotationInfo, String fieldName) {
 		if (annotationInfo.fluentAccessors()) {
@@ -146,12 +153,10 @@ public interface ClassGenerator {
 	/**
 	 * generate toString method
 	 * 
-	 * @param packageName
-	 * @param className
-	 * @param annotationInfo
-	 * @param methods
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param methods - list of methods to be created
 	 */
-	default void createToString(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+	default void createToString(ElementInfo annotationInfo, List<MethodSpec> methods) {
 		// create toSTring method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString")
 				.addModifiers(Modifier.PUBLIC)
