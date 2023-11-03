@@ -30,9 +30,9 @@ jobs:
 
     # Upload release package to maven-central
     - name: Publish package
-        run: mvn -B deploy --file pom.xml
+      run: mvn -B deploy --file pom.xml
         
-        env:
+      env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
