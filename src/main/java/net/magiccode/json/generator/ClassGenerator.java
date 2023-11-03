@@ -23,6 +23,8 @@ import net.magiccode.json.util.StringUtil;
 public interface ClassGenerator {
 
 	/**
+	 * initiate the generation process.
+	 * 
 	 * @throws IOException
 	 */
 	public void generate() throws IOException;
@@ -46,6 +48,7 @@ public interface ClassGenerator {
 
 	/**
 	 * create no-args constructor
+	 * 
 	 * @param packageName
 	 * @param className
 	 * @param methods
@@ -58,6 +61,7 @@ public interface ClassGenerator {
 	
 	/**
 	 * create setter method
+	 * 
 	 * @param field
 	 * @return
 	 */

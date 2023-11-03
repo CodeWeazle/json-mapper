@@ -55,10 +55,14 @@ public class JSONClassGenerator implements ClassGenerator {
 	ProcessingEnvironment procEnv;
 
 	/**
-	 * @param procEnv
-	 * @param filer
-	 * @param messager
-	 * @param input
+	 * The purpose of this class is to generate JSON annotated Java code
+	 * using the JavaPoet framework. See documentation for more details
+	 * about <i>@JSONMapped</i>
+	 * 
+	 * @param procEnv - the processing environment 
+	 * @param filer - the filer
+	 * @param messager - used to output messages
+	 * @param input - information collected beforehand based on the annotation
 	 */
 	public JSONClassGenerator(ProcessingEnvironment procEnv,
 							  Filer filer,

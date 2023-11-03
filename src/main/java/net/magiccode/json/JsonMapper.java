@@ -37,7 +37,7 @@ import net.magiccode.json.generator.ElementInfo.ElementInfoBuilder;
 import net.magiccode.json.generator.JSONClassGenerator;
 
 /**
- * 
+ * Annotation processor with the purpose to generate Jackson annotated Java code for JSON DTOs. 
  */
 @SupportedAnnotationTypes("net.magiccode.json.annotation.*")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)

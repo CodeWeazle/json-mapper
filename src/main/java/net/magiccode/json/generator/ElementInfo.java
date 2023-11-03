@@ -18,7 +18,9 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * 
+ * ElementInfo is a data transfer object which keeps information about the arguments of the 
+ * annotation and some additional information, such as the fields of the annotated class etc.
+ * This class is referred to in the generator as <i>annotationInfo</i>.
  */
 @Builder
 @Getter @Accessors(fluent = true)
