@@ -139,6 +139,41 @@
 					</execution>
 				</executions>
 			</plugin>
+<!--
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.5</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+-->
+			<plugin>
+		      <groupId>org.apache.maven.plugins</groupId>
+		      <artifactId>maven-gpg-plugin</artifactId>
+		      <version>1.5</version>
+		      <executions>
+		        <execution>
+		          <id>sign-artifacts</id>
+		          <phase>verify</phase>
+		          <goals>
+		            <goal>sign</goal>
+		          </goals>
+		          <configuration>
+		            <keyname>CDB4C379E59BDB0637A37786E38088ACA8297A36</keyname>
+		            <passphraseServerId>CDB4C379E59BDB0637A37786E38088ACA8297A36</passphraseServerId>
+		          </configuration>
+		        </execution>
+		      </executions>
+		    </plugin>
+
 
 		</plugins>
 	</build>
@@ -158,19 +193,19 @@
 	</reporting>
 
 	<distributionManagement>
-		<repository>
-			<id>github</id>
-			<name>GitHub CodeWeazle json-mapper Packages</name>
-			<url>https://maven.pkg.github.com/CodeWeazle/json-mapper</url>
-		</repository>
-	</distributionManagement>
+	    <repository>
+	      <id>ossrh</id>
+	      <name>Central Repository OSSRH</name>
+	      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+	    </repository>
+	 </distributionManagement>
 
-	 <licenses>
-	    <license>
-	      <name>The Apache Software License, Version 2.0</name>
-	      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-	    </license>
-	  </licenses>
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
 
 
 	<developers>
@@ -183,9 +218,9 @@
 	</developers>
 
 	<scm>
-	  <connection>scm:git:git://github.com/CodeWeazle/json-mapper.git</connection>
-	  <developerConnection>scm:git:ssh://github.com:CodeWeazle/json-mapper.git</developerConnection>
-	  <url>https://maven.pkg.github.com/CodeWeazle/json-mapper</url>
+		<connection>scm:git:git://github.com/CodeWeazle/json-mapper.git</connection>
+		<developerConnection>scm:git:ssh://github.com:CodeWeazle/json-mapper.git</developerConnection>
+		<url>https://maven.pkg.github.com/CodeWeazle/json-mapper</url>
 	</scm>
-	
+
 </project>
