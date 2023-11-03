@@ -25,19 +25,19 @@ public interface ClassGenerator {
 	/**
 	 * initiate the generation process.
 	 * 
-	 * @throws IOException
+	 * @throws IOException if file cannot be written
 	 */
 	public void generate() throws IOException;
 	
 	/**
 	 * Generate the class code with given fields and methods
 	 * 
-	 * @param annotationInfo
-	 * @param className
-	 * @param packageName
-	 * @param fields
-	 * @param methods
-	 * @return typeSpec object containing the newly generated class
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param className - class name of the class to be created
+	 * @param packageName - the package the class to be created shall be located in.
+	 * @param fields - list of fields to be created
+	 * @param methods - list of methods to be created
+	 * @return typeSpec - object containing the newly generated class
 	 */
 	public TypeSpec generateClass(ElementInfo annotationInfo, 
 								   String className, 
@@ -49,11 +49,9 @@ public interface ClassGenerator {
 	/**
 	 * create no-args constructor
 	 * 
-	 * @param packageName
-	 * @param className
-	 * @param methods
+	 * @param methods - list of methods to be created
 	 */
-	default void createNoArgsConstructor(String packageName, String className, List<MethodSpec> methods) {
+	default void createNoArgsConstructor(List<MethodSpec> methods) {
 		methods.add(MethodSpec.constructorBuilder()
 							  .addModifiers(Modifier.PUBLIC)
 							  .build());
@@ -62,8 +60,8 @@ public interface ClassGenerator {
 	/**
 	 * create setter method
 	 * 
-	 * @param field
-	 * @return
+	 * @param fields - list of fields to be created
+	 * @return specification for setter method
 	 */
 	default MethodSpec createSetterMethodSpec(VariableElement field, ElementInfo annotationInfo) {
         TypeMirror fieldType = field.asType();
@@ -86,11 +84,10 @@ public interface ClassGenerator {
 	/**
 	 * create getter method
 	 * 
-	 * @param field
-	 * @param fieldClass
-	 * @return
+	 * @param fields - list of fields to be created
+	 * @return specification for setter method
 	 */
-	default MethodSpec createGetterMethodSpec(VariableElement field, TypeName fieldClass, ElementInfo annotationInfo) {
+	default MethodSpec createGetterMethodSpec(VariableElement field, ElementInfo annotationInfo) {
 		TypeMirror fieldType = field.asType();
 		// create getter method
 		String getterName = generateGetterName(annotationInfo, field.getSimpleName().toString(), fieldType.toString().equals(Boolean.class.getName()));
@@ -107,9 +104,9 @@ public interface ClassGenerator {
 	/**
 	 * create field
 	 * 
-	 * @param field
-	 * @param fieldClass
-	 * @return
+	 * @param field - VariableElement representation of field ot be created 
+	 * @param fieldClass - TypeName for class field shall be created in.
+	 * @return field specification for the create field.
 	 */
 	default FieldSpec createFieldSpec(VariableElement field, TypeName fieldClass) {
 		FieldSpec fieldspec = FieldSpec.builder(fieldClass, field.getSimpleName().toString(), Modifier.PRIVATE).build();
@@ -185,8 +182,8 @@ public interface ClassGenerator {
 	 * check if field is declared as
 	 * final static private
 	 * 
-	 * @param field
-	 * @return
+	 * @param field -  the @see VariableElement to be checked
+	 * @return true if the given field is private, final and static
 	 */
 	default boolean isMethodFinalPrivateStatic(VariableElement field) {
 		return (field.getModifiers().contains(Modifier.FINAL) &&

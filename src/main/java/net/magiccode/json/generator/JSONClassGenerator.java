@@ -97,7 +97,7 @@ public class JSONClassGenerator implements ClassGenerator {
 					if (annotationInfo.useLombok()) {
 						createFields(annotationInfo, fields);						
 					} else { // otherwise, we also need getters and setters
-						createNoArgsConstructor(packageName, className, methods);
+						createNoArgsConstructor(methods);
 						createFieldsGettersAndSetters(annotationInfo, fields, methods);
 						createToString(annotationInfo, methods);
 					}
@@ -142,7 +142,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
 	
 				fields.add(createFieldSpec(field, fieldClass));
-				methods.add(createGetterMethodSpec(field, fieldClass, annotationInfo));
+				methods.add(createGetterMethodSpec(field, annotationInfo));
 				methods.add(createSetterMethodSpec(field, annotationInfo));
 		});
 	}

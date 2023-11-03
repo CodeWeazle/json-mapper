@@ -1,5 +1,5 @@
 /**
- * 
+ * ClassCompiler compiles given java file into class file.
  */
 package net.magiccode.json.generator;
 
