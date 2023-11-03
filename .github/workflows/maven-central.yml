@@ -27,6 +27,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+
     # Upload release package to maven-central
     - name: Publish package
         run: mvn -B deploy --file pom.xml
