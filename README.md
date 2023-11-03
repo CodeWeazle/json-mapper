@@ -191,4 +191,3 @@ At the time being, the dependencies used by *json-mapper* are
 
 - implement *Builder* for generated classes (non-useLombok)
 
-
