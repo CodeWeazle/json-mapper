@@ -54,7 +54,7 @@ public class ElementInfo {
 	private TypeElement element;
 	
 	/**
-	 * if set to true (default), setter methods will return <7>this</i>.
+	 * if set to true (default), setter methods will return <i>this</i>.
 	 */
 	private boolean chainedSetters;
 	
@@ -71,7 +71,7 @@ public class ElementInfo {
 	private boolean inheritFields;
 	
 	/**
-	 * Allows to specify the value for the <link>@JsonInclude</link> annotation of the 
+	 * Allows to specify the value for the @see @JsonInclude annotation of the 
 	 * generated class. Defaults to Include.ALWAYS,
 	 * Possible values are
 	 * ALWAYS,NON_NULL,NON_ABSENT,NON_EMPTY,NON_DEFAULT,CUSTOM,USE_DEFAULTS

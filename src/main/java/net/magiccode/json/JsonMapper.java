@@ -60,12 +60,11 @@ public class JsonMapper extends MapperBase {
 	}
 
 	/**
-	 * Overriding <link>AbstractProcessor.process</link> allows us to inspect the
+	 * Overriding @see AbstractProcessor.process() allows us to inspect the
 	 * code to start the generation
 	 *
-	 * @param Set<?            extends TypeElement> annotations - annotations
-	 * @param RoundEnvironment roundEnv - contains the environment of the compiler
-	 *                         round
+	 * @param annotations
+	 * @param roundEnv - contains the environment of the compiler round.
 	 */
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 

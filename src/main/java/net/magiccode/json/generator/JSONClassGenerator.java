@@ -55,9 +55,10 @@ public class JSONClassGenerator implements ClassGenerator {
 	ProcessingEnvironment procEnv;
 
 	/**
+	 * @param procEnv
 	 * @param filer
+	 * @param messager
 	 * @param input
-	 * @param elements
 	 */
 	public JSONClassGenerator(ProcessingEnvironment procEnv,
 							  Filer filer,
@@ -144,7 +145,6 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * 
 	 * @param annotationInfo
 	 * @param fields
-	 * @param methods
 	 */
 	private void createFields(ElementInfo annotationInfo, List<FieldSpec> fields) {
 		// Generate fields
@@ -346,7 +346,6 @@ public class JSONClassGenerator implements ClassGenerator {
 	/**
 	 * Create constructor taking the source class and creating the json mapped class.
 	 * 
-	 * @param key
 	 * @param packageName
 	 * @param className
 	 * @param annotationInfo
@@ -394,23 +393,9 @@ public class JSONClassGenerator implements ClassGenerator {
 				methods.add(to.build());
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+		
 	/**
-	 * create field
+	 * create field spec
 	 * 
 	 * @param field
 	 * @param fieldClass

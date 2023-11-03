@@ -20,7 +20,6 @@ public class ReflectionUtil {
 	 * invoke the getter method on the given field.
 	 * 
 	 * @param src
-	 * @param dest
 	 * @param field
 	 * @throws IllegalAccessException
 	 */

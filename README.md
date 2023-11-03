@@ -110,6 +110,9 @@ Fields, of course, will be generated with (at least) @JsonProperty or @JsonIgnor
 ---- Constructor explanation an 'of' methods ----
 
 
+
+
+
 ### toJSONString()
 
 Additionally to the usual *toString()* method and additional *toJSONString()* method is generated that prints the name and contents of the class as formatted JSON.
