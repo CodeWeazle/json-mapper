@@ -16,7 +16,7 @@
 		<lombok.version>1.18.30</lombok.version>
 		<javapoet.version>1.13.0</javapoet.version>
 		<auto-service.version>1.1.1</auto-service.version>
-		
+
 		<delombok.output>target/delombok</delombok.output>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -69,7 +69,7 @@
 
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
-	
+
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -123,22 +123,57 @@
 				<configuration>
 					<show>private</show>
 					<nohelp>true</nohelp>
- 			        <sourcepath>${delombok.output}</sourcepath> 			        
+					<sourcepath>${delombok.output}</sourcepath>
 				</configuration>
 				<executions>
-		          <execution>
-		            <id>javadoc-jar</id>
-		            <phase>package</phase>
-		            <goals>
-		              <goal>jar</goal>
-		            </goals>
-		            <configuration>
-		              <!-- switch on dependency-driven aggregation -->
-		              <includeDependencySources>true</includeDependencySources>
-		            </configuration>
-		          </execution>
-		         </executions>
+					<execution>
+						<id>javadoc-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<!-- switch on dependency-driven aggregation -->
+							<includeDependencySources>true</includeDependencySources>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
+<!--
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.5</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+-->
+			<plugin>
+		      <groupId>org.apache.maven.plugins</groupId>
+		      <artifactId>maven-gpg-plugin</artifactId>
+		      <version>1.5</version>
+		      <executions>
+		        <execution>
+		          <id>sign-artifacts</id>
+		          <phase>verify</phase>
+		          <goals>
+		            <goal>sign</goal>
+		          </goals>
+		          <configuration>
+		            <keyname>CDB4C379E59BDB0637A37786E38088ACA8297A36</keyname>
+		            <passphraseServerId>CDB4C379E59BDB0637A37786E38088ACA8297A36</passphraseServerId>
+		          </configuration>
+		        </execution>
+		      </executions>
+		    </plugin>
+
 
 		</plugins>
 	</build>
@@ -158,10 +193,34 @@
 	</reporting>
 
 	<distributionManagement>
-		<repository>
-			<id>github</id>
-			<name>GitHub CodeWeazle json-mapper Packages</name>
-			<url>https://maven.pkg.github.com/CodeWeazle/json-mapper</url>
-		</repository>
-	</distributionManagement>
+	    <repository>
+	      <id>ossrh</id>
+	      <name>Central Repository OSSRH</name>
+	      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+	    </repository>
+	 </distributionManagement>
+
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+
+	<developers>
+		<developer>
+			<name>Volker Karlmeier</name>
+			<email>volker@magiccode.net</email>
+			<timezone>Europe/London</timezone>
+			<url>https://github.com/CodeWeazle/json-mapper</url>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:git://github.com/CodeWeazle/json-mapper.git</connection>
+		<developerConnection>scm:git:ssh://github.com:CodeWeazle/json-mapper.git</developerConnection>
+		<url>https://maven.pkg.github.com/CodeWeazle/json-mapper</url>
+	</scm>
+
 </project>
