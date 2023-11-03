@@ -6,7 +6,8 @@
 	<artifactId>json-mapper</artifactId>
 	<version>0.0.4-SNAPSHOT</version>
 	<name>Json Mapper</name>
-	<description>Provides annotations for entity-json mapping generation</description>
+	<description>Provides annotations for entity-json mapping dto generation</description>
+	<url>https://github.com/CodeWeazle/json-mapper</url>
 
 	<properties>
 		<java.version>17</java.version>
@@ -124,6 +125,19 @@
 					<nohelp>true</nohelp>
  			        <sourcepath>${delombok.output}</sourcepath> 			        
 				</configuration>
+				<executions>
+		          <execution>
+		            <id>javadoc-jar</id>
+		            <phase>package</phase>
+		            <goals>
+		              <goal>jar</goal>
+		            </goals>
+		            <configuration>
+		              <!-- switch on dependency-driven aggregation -->
+		              <includeDependencySources>true</includeDependencySources>
+		            </configuration>
+		          </execution>
+		         </executions>
 			</plugin>
 
 		</plugins>
