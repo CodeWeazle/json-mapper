@@ -57,7 +57,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	/**
 	 * The purpose of this class is to generate JSON annotated Java code
 	 * using the JavaPoet framework. See documentation for more details
-	 * about <i>@JSONMapped</i>
+	 * about <i>JSONMapped</i>
 	 * 
 	 * @param procEnv - the processing environment 
 	 * @param filer - the filer
@@ -404,11 +404,11 @@ public class JSONClassGenerator implements ClassGenerator {
 
 		
 	/**
-	 * create field spec
+	 * create field
 	 * 
-	 * @param field
-	 * @param fieldClass
-	 * @return
+	 * @param field - VariableElement representation of field to be created 
+	 * @param fieldClass - TypeName for class field shall be created in.
+	 * @return field specification for the create field.
 	 */
 	@Override
 	public FieldSpec createFieldSpec(VariableElement field, TypeName fieldClass) {

@@ -60,7 +60,8 @@ public interface ClassGenerator {
 	/**
 	 * create setter method
 	 * 
-	 * @param fields - list of fields to be created
+	 * @param field - the VariableElement or the field the setter is to be created for. 
+	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
 	 * @return specification for setter method
 	 */
 	default MethodSpec createSetterMethodSpec(VariableElement field, ElementInfo annotationInfo) {
@@ -84,8 +85,9 @@ public interface ClassGenerator {
 	/**
 	 * create getter method
 	 * 
-	 * @param fields - list of fields to be created
-	 * @return specification for setter method
+	 * @param field - the VariableElement or the field the setter is to be created for.
+	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
+	 * @return specification for getter method
 	 */
 	default MethodSpec createGetterMethodSpec(VariableElement field, ElementInfo annotationInfo) {
 		TypeMirror fieldType = field.asType();
@@ -104,7 +106,7 @@ public interface ClassGenerator {
 	/**
 	 * create field
 	 * 
-	 * @param field - VariableElement representation of field ot be created 
+	 * @param field - VariableElement representation of field to be created 
 	 * @param fieldClass - TypeName for class field shall be created in.
 	 * @return field specification for the create field.
 	 */
