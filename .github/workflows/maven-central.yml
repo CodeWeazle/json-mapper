@@ -32,14 +32,14 @@ jobs:
         server-username: OSSRH_USERNAME # env variable for username in deploy
         server-password: OSSRH_TOKEN # env variable for token in deploy
         gpg-private-key: ${{ secrets.CDB4C379E59BDB0637A37786E38088ACA8297A36 }} # Value of the GPG private key to import
-        gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
+        #gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
 
 # Publish to maven central repository
     - name: Publish to Central Repository
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-      run: mvn  --no-transfer-progress  --batch-mode -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} clean deploy --file pom.xml
+      run: mvn  --no-transfer-progress  --batch-mode clean deploy --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
