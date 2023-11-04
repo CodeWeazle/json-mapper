@@ -162,18 +162,31 @@
 					</execution>
 				</executions>
 			</plugin>
-
+<!--
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
 				<version>1.6.13</version>
 				<extensions>true</extensions>
 				<configuration>
-					<serverId>maven-central</serverId>
+					<serverId>nexus-staging</serverId>
 					<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
         			<autoReleaseAfterClose>true</autoReleaseAfterClose>
 				</configuration>
 			</plugin>
+-->
+
+			<plugin>
+			  <groupId>org.sonatype.central</groupId>
+			  <artifactId>central-publishing-maven-plugin</artifactId>
+			  <version>0.1.2</version>
+			  <extensions>true</extensions>
+			  <configuration>
+			    <publishingServerId>central</publishingServerId>
+			    <tokenEnabled>true</tokenEnabled>
+			  </configuration>
+			</plugin>
+
 		</plugins>
 	</build>
 
@@ -191,6 +204,7 @@
 		</plugins>
 	</reporting>
 
+<!--
 	<distributionManagement>
 		<repository>
 			<id>maven-central</id>
@@ -198,6 +212,7 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
+-->
 
 	<licenses>
 		<license>
