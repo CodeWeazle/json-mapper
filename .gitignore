@@ -29,3 +29,5 @@ target/
 .project
 org.*/
 .metadata/
+
+pom.xml.swp
