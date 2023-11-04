@@ -196,8 +196,8 @@ public class JSONClassGenerator implements ClassGenerator {
 						.addFields(fields)
 						.addMethods(methods)
 						.addAnnotation(
-								AnnotationSpec.builder(JsonInclude.class)
-								.addMember("value", "$T", annotationInfo)
+								AnnotationSpec.builder(JSONMappedBy.class)
+								.addMember("mappedClass", "$T.class", ClassName.get(annotationInfo.element()) )
 								.build())
 						.addAnnotation(
 								AnnotationSpec.builder(JsonInclude.class)
@@ -245,7 +245,10 @@ public class JSONClassGenerator implements ClassGenerator {
 		// create toJSONString method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toJSONString")
 				.addModifiers(Modifier.PUBLIC)
-				
+				.addJavadoc(CodeBlock.builder()
+						.add("provides a formatted JSON string with all fields\n")
+						.add("and their current values.\n")
+					    .build())
 				.addStatement("$T mapper = new $T()", ObjectMapper.class, ObjectMapper.class)
 				.addStatement("String value = this.getClass().getName()")
 				.beginControlFlow("try")

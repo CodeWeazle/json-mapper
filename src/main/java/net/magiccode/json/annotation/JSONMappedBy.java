@@ -18,4 +18,5 @@ import java.lang.annotation.Target;
  */
 public @interface JSONMappedBy {
 
+	Class<?> mappedClass() default Object.class;
 }
