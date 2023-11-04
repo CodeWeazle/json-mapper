@@ -39,7 +39,10 @@ jobs:
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-      run: mvn  --no-transfer-progress  --batch-mode clean deploy --file pom.xml
+      run: |
+        git config --global user.email "volker@magiccode.net"
+        git config --global user.name "Volker Karlmeier" 
+        mvn  --no-transfer-progress  --batch-mode clean deploy --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
