@@ -29,16 +29,17 @@ jobs:
         distribution: 'temurin'
         cache: maven
         server-id: maven-central # Value of the distributionManagement/repository/id field of the pom.xml
-        server-username: secrets.OSSRH_USERNAME # env variable for username in deploy
-        server-password: secrets.OSSRH_TOKEN # env variable for token in deploy
+        server-username: MAVEN_USERNAME # env variable for username in deploy
+        server-password: MAVEN_PASSWORD # env variable for token in deploy
         gpg-private-key: ${{ secrets.CDB4C379E59BDB0637A37786E38088ACA8297A36 }} # Value of the GPG private key to import
-        gpg-passphrase:  secrets.GPG_PASSPHRASE # env variable for GPG private key passphrase
+        gpg-passphrase:  MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
 
 # Publish to maven central repository
     - name: Publish to Central Repository
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+        MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       run: |
         git config --global user.email "volker@magiccode.net"
         git config --global user.name "Volker Karlmeier" 
