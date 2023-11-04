@@ -43,8 +43,8 @@ jobs:
       run: |
         git config --global user.email "volker@magiccode.net"
         git config --global user.name "Volker Karlmeier" 
-        git config --global user.signingkey CDB4C379E59BDB0637A37786E38088ACA8297A36
-        mvn -X --no-transfer-progress  --batch-mode clean deploy --file pom.xml
+        git config --global user.signingkey "CDB4C379E59BDB0637A37786E38088ACA8297A36"
+        mvn --no-transfer-progress  --batch-mode -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} clean deploy --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
