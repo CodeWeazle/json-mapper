@@ -27,15 +27,25 @@ public abstract class MapperBase extends AbstractProcessor {
 		return null;
 	}
 	
+	/**
+	 * get the class represented by the given TypeElement
+	 * @param element the TypeElement to inspect
+	 * @return the class object for the TypeElement if available, else null
+	 */
 	protected static Class<?> getClass(TypeElement element) {
-        try {/*w w w .j  a va 2s .  c  om*/
+        try {
             return Class.forName(getClassName(element));
         } catch (Exception e) {
-            //System.out.println(e);
+           // nop
         }
         return null;
     }
 
+	/**
+	 * return class name including inner classes
+	 * @param element the TypeElement to inspect
+	 * @return the name of the class.
+	 */
 	protected static String getClassName(TypeElement element) {
         Element currElement = element;
         String result = element.getSimpleName().toString();
