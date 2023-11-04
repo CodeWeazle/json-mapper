@@ -9,6 +9,17 @@
 Add the annotation processor class to your pom.xml and rebuild your project. (The version shown is related to the *release* branch.)
 
 ```
+
+    <dependencies>
+    	...
+    	<dependency>
+			<groupId>net.magiccode.json</groupId>
+			<artifactId>json-mapper</artifactId>
+			<version>0.0.3</version>
+    	</dependency>
+    	...
+    </dependencies>
+    ...
 	<build>
 		<plugins>
 			...
