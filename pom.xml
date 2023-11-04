@@ -118,32 +118,16 @@
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.6.0</version>
-				<configuration>
-					<show>private</show>
-					<nohelp>true</nohelp>
-					<sourcepath>${delombok.output}</sourcepath>
-				</configuration>
-				<executions>
-					<execution>
-						<id>javadoc-jar</id>
-						<phase>package</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-						<configuration>
-							<!-- switch on dependency-driven aggregation -->
-							<includeDependencySources>true</includeDependencySources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-<!--
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
-				<version>1.5</version>
+				<version>3.1.0</version>
+				<configuration>
+				  <keyname>CDB4C379E59BDB0637A37786E38088ACA8297A36</keyname>
+				  <passphraseServerId>CDB4C379E59BDB0637A37786E38088ACA8297A36</passphraseServerId>
+				  <gpgArguments>
+				    <arg>--pinentry-mode</arg>
+				    <arg>loopback</arg>
+				  </gpgArguments>
+				</configuration>
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
@@ -154,7 +138,7 @@
 					</execution>
 				</executions>
 			</plugin>
--->
+
 			<plugin>
 		      <groupId>org.apache.maven.plugins</groupId>
 		      <artifactId>maven-gpg-plugin</artifactId>
@@ -173,7 +157,6 @@
 		        </execution>
 		      </executions>
 		    </plugin>
-
 
 		</plugins>
 	</build>

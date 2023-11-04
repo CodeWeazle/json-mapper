@@ -39,6 +39,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
+import net.magiccode.json.annotation.JSONMappedBy;
 import net.magiccode.json.annotation.JSONRequired;
 import net.magiccode.json.annotation.JSONTransient;
 import net.magiccode.json.util.ReflectionUtil;
@@ -194,6 +195,10 @@ public class JSONClassGenerator implements ClassGenerator {
 										 .build())
 						.addFields(fields)
 						.addMethods(methods)
+						.addAnnotation(
+								AnnotationSpec.builder(JsonInclude.class)
+								.addMember("value", "$T", annotationInfo)
+								.build())
 						.addAnnotation(
 								AnnotationSpec.builder(JsonInclude.class)
 											.addMember("value", "$T.$L", Include.class, annotationInfo.jsonInclude().name())
