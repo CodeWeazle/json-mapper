@@ -91,6 +91,10 @@ public class JSONClassGenerator implements ClassGenerator {
 					messager.printMessage(Diagnostic.Kind.NOTE,"Generating " + className);
 
 					String packageName = generatePackageName(key, annotationInfo);
+					
+						messager.printMessage(Diagnostic.Kind.NOTE,"annotated class "+key.canonicalName()+
+																   ", generated class "+packageName+"."+className);
+
 					List<FieldSpec> fields = new ArrayList<>();
 					List<MethodSpec> methods = new ArrayList<>();
 
