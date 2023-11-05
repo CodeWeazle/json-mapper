@@ -64,8 +64,9 @@ public interface ClassGenerator {
 	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
 	 * @return specification for setter method
 	 */
-	default MethodSpec createSetterMethodSpec(VariableElement field, ElementInfo annotationInfo) {
-        TypeMirror fieldType = field.asType();
+	default MethodSpec createSetterMethodSpec(VariableElement field, 
+											  ElementInfo annotationInfo,
+											  TypeName fieldTypeName) {
 		// create setter method
 		String className = annotationInfo.prefix() + annotationInfo.className();
 		String packageName = annotationInfo.packageName();
@@ -73,7 +74,7 @@ public interface ClassGenerator {
 		MethodSpec.Builder setterBuilder = MethodSpec
 										   .methodBuilder(setterName)
 										   .addModifiers(Modifier.PUBLIC)
-										   .addParameter(TypeName.get(fieldType),field.getSimpleName().toString(), new Modifier[0])
+										   .addParameter(fieldTypeName,field.getSimpleName().toString(), new Modifier[0])
 										   .addStatement("this.$L = $L", field.getSimpleName().toString(), field.getSimpleName().toString());
 		if (annotationInfo.chainedSetters()) {
 			setterBuilder.addStatement("return this")
@@ -89,16 +90,17 @@ public interface ClassGenerator {
 	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
 	 * @return specification for getter method
 	 */
-	default MethodSpec createGetterMethodSpec(VariableElement field, ElementInfo annotationInfo) {
-		TypeMirror fieldType = field.asType();
+	default MethodSpec createGetterMethodSpec(VariableElement field, 
+											  ElementInfo annotationInfo,
+											  TypeName fieldTypeName) {
 		// create getter method
-		String getterName = generateGetterName(annotationInfo, field.getSimpleName().toString(), fieldType.toString().equals(Boolean.class.getName()));
+		String getterName = generateGetterName(annotationInfo, field.getSimpleName().toString(), fieldTypeName.toString().equals(Boolean.class.getName()));
 		String fieldName = field.getSimpleName().toString();
 		MethodSpec getter = MethodSpec
 				.methodBuilder(getterName)
 				.addModifiers(Modifier.PUBLIC)
 				.addStatement("return "+fieldName)
-				.returns(TypeName.get(fieldType))
+				.returns(fieldTypeName)
 				.build();
 		return getter;
 	}
@@ -107,10 +109,13 @@ public interface ClassGenerator {
 	 * create field
 	 * 
 	 * @param field - VariableElement representation of field to be created 
+	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
 	 * @param fieldClass - TypeName for class field shall be created in.
+	 * @param fieldIsMapped - indicates whether or not the given field is annotated
+	 * 						  with {@code JSONMapped}.
 	 * @return field specification for the create field.
 	 */
-	default FieldSpec createFieldSpec(VariableElement field, TypeName fieldClass) {
+	default FieldSpec createFieldSpec(VariableElement field, ElementInfo annotationInfo, TypeName fieldClass, boolean fieldIsMapped) {
 		FieldSpec fieldspec = FieldSpec.builder(fieldClass, field.getSimpleName().toString(), Modifier.PRIVATE).build();
 		return fieldspec;
 	}
@@ -192,4 +197,6 @@ public interface ClassGenerator {
 				field.getModifiers().contains(Modifier.PRIVATE) &&
 				field.getModifiers().contains(Modifier.STATIC));
 	}
+	
+	
 }

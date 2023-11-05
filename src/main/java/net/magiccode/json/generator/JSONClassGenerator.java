@@ -13,9 +13,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -39,11 +42,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
+import net.magiccode.json.annotation.JSONMapped;
 import net.magiccode.json.annotation.JSONMappedBy;
 import net.magiccode.json.annotation.JSONRequired;
 import net.magiccode.json.annotation.JSONTransient;
 import net.magiccode.json.util.ReflectionUtil;
 import net.magiccode.json.util.StringUtil;
+
+
+// import com.sun.tools.javac.code.Attribute;
 
 /**
  * Generate a copy 
@@ -54,6 +61,8 @@ public class JSONClassGenerator implements ClassGenerator {
 	Filer filer;
 	Messager messager;
 	ProcessingEnvironment procEnv;
+	private final Types typeUtils;
+
 
 	/**
 	 * The purpose of this class is to generate JSON annotated Java code
@@ -72,6 +81,8 @@ public class JSONClassGenerator implements ClassGenerator {
 		this.filer = filer;
 		this.input = input;
 		this.messager = messager;
+		this.procEnv = procEnv;
+		this.typeUtils = procEnv.getTypeUtils();
 	}
 
 	/**
@@ -143,13 +154,23 @@ public class JSONClassGenerator implements ClassGenerator {
 					  .forEach(field -> {
 
 				TypeMirror fieldType = field.asType();
-				TypeName fieldClass = TypeName.get(fieldType);
-				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
-	
-				fields.add(createFieldSpec(field, fieldClass));
-				methods.add(createGetterMethodSpec(field, annotationInfo));
-				methods.add(createSetterMethodSpec(field, annotationInfo));
-		});
+				
+				TypeName fieldTypeName = TypeName.get(fieldType);
+				boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
+				if (fieldIsMapped) {
+					TypeMirror fieldTypeMirror = field.asType();
+					Element fieldElement = typeUtils.asElement(fieldTypeMirror);
+					if (fieldElement instanceof TypeElement) {
+						ClassName fieldClassName = ClassName.get((TypeElement) fieldElement);
+						String fcName = annotationInfo.prefix()+fieldClassName.simpleName();
+						fieldTypeName = ClassName.get(generatePackageName(fieldClassName, annotationInfo), fcName);
+					}
+				}
+				
+				fields.add(createFieldSpec(field, annotationInfo, fieldTypeName, fieldIsMapped));
+				methods.add(createGetterMethodSpec(field, annotationInfo, fieldTypeName));
+				methods.add(createSetterMethodSpec(field, annotationInfo, fieldTypeName));
+			});
 	}
 
 	
@@ -166,8 +187,10 @@ public class JSONClassGenerator implements ClassGenerator {
 		  .forEach(field -> {
 				TypeMirror fieldType = field.asType();
 				TypeName fieldClass = TypeName.get(fieldType);
+				TypeElement fieldClassElement = procEnv.getElementUtils().getTypeElement(ClassName.get(fieldType).toString());
+				boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
-				fields.add(createFieldSpec(field, fieldClass));
+				fields.add(createFieldSpec(field, annotationInfo, fieldClass, fieldIsMapped));
 		});		
 	}
 
@@ -276,11 +299,15 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param annotationInfo
 	 * @param methods
 	 */
-	private void createOfWithArguments(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+	private void createOfWithArguments(String packageName, 
+									   String className, 
+									   ElementInfo annotationInfo, 
+									   List<MethodSpec> methods) {
 		// create of method
 		MethodSpec.Builder of = MethodSpec.methodBuilder("of")
 				.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
 				.addStatement(className+" newJsonObect = new "+className+"();")
+				.addException(IllegalAccessException.class)
 				.addJavadoc(CodeBlock
 					    .builder()
 					    .add("Creates object with all given values, acts basically as a AllArgsConstructor.\n")
@@ -296,8 +323,23 @@ public class JSONClassGenerator implements ClassGenerator {
 				annotationInfo.fields().stream()
 					  .filter(field -> ! isMethodFinalPrivateStatic(field))
 					  .forEach(field -> {
-						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
-						of.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());
+						  
+					  String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
+					  boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
+					  if (!fieldIsMapped) {
+					  	  of.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());
+					  } else {
+							TypeMirror fieldTypeMirror = field.asType();
+							Element fieldElement = typeUtils.asElement(fieldTypeMirror);
+							if (fieldElement instanceof TypeElement) {
+								ClassName fieldClassName = ClassName.get((TypeElement) fieldElement); 
+								String fcName = annotationInfo.prefix()+fieldClassName.simpleName();
+								ClassName mappedFieldClassName = ClassName.get(generatePackageName(fieldClassName, annotationInfo), fcName);
+								of.addStatement("newJsonObect.$L($T.of($L))", setterName, 
+																			  mappedFieldClassName,
+																			  field.getSimpleName().toString());
+							}
+					  }
 			    });
 				of.addStatement("return newJsonObect")
 				
@@ -342,21 +384,51 @@ public class JSONClassGenerator implements ClassGenerator {
 						String fieldName = field.getSimpleName().toString();
 						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
 						String localFieldName = "field"+fieldCount.getAndIncrement();
+						boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 						of
-							  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
-									  												 localFieldName,
-									  												 ReflectionUtil.class, 
-									  												 className+".class", 
-									  												 fieldName)
-					
-							  .beginControlFlow("if ($L != null)" , localFieldName)
-								.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
-												  setterName,
-										   		  fieldClass,
-										   		  ReflectionUtil.class, 
-										   		  incomingObjectName,
-										   		  localFieldName)
-							  .endControlFlow();
+						 	.addStatement("if ($L == null) return null" , incomingObjectName);
+						
+						if (!fieldIsMapped) {
+							of
+								  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
+										  												 localFieldName,
+										  												 ReflectionUtil.class, 
+										  												 className+".class", 
+										  												 fieldName)
+						
+								  .beginControlFlow("if ($L != null)" , localFieldName)
+									.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
+													  setterName,
+											   		  fieldClass,
+											   		  ReflectionUtil.class, 
+											   		  incomingObjectName,
+											   		  localFieldName)
+								  .endControlFlow();
+						} else {
+							TypeMirror fieldTypeMirror = field.asType();
+							Element fieldElement = typeUtils.asElement(fieldTypeMirror);
+							if (fieldElement instanceof TypeElement) {
+								ClassName fieldClassName = ClassName.get((TypeElement) fieldElement); 
+								String fcName = annotationInfo.prefix()+fieldClassName.simpleName();
+								ClassName mappedFieldClassName = ClassName.get(generatePackageName(fieldClassName, annotationInfo), fcName);
+								of
+								  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
+										  												 localFieldName,
+										  												 ReflectionUtil.class, 
+										  												 className+".class", 
+										  												 fieldName)
+						
+								  .beginControlFlow("if ($L != null)" , localFieldName)
+									.addStatement("newJsonObect.$L($T.of(($L)$T.invokeGetterMethod($L, $L)))",  
+													  setterName,
+													  mappedFieldClassName,
+											   		  fieldClass,
+											   		  ReflectionUtil.class, 
+											   		  incomingObjectName,
+											   		  localFieldName)
+								  .endControlFlow();
+							}							
+						}
 				});
 				of.addStatement("return newJsonObect")
 				.returns(ClassName.get(packageName, className));
@@ -393,6 +465,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				AtomicInteger fieldCount = new AtomicInteger(0);
 				annotationInfo.fields().stream().filter(field -> ! isMethodFinalPrivateStatic(field))
 												.forEach(field -> {
+						boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 						String fieldName = field.getSimpleName().toString();
 						String localFieldName = "field"+fieldCount.getAndIncrement();
 						to
@@ -401,8 +474,8 @@ public class JSONClassGenerator implements ClassGenerator {
 									  												 ReflectionUtil.class, 
 									  												 className+".class", 
 									  												 fieldName)					
-							  .beginControlFlow("if ($L != null)" , localFieldName)
-								.addStatement("$T.invokeSetterMethod($L, $L, $L)",
+							  .beginControlFlow("if ($L != null && $L != null)" , localFieldName, fieldName)
+								.addStatement("$T.invokeSetterMethod($L, $L, $L"+(fieldIsMapped?".to()":"")+")",
 										   		  ReflectionUtil.class, 
 										   		  objectName,
 										   		  localFieldName,
@@ -420,12 +493,15 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * 
 	 * @param field - VariableElement representation of field to be created 
 	 * @param fieldClass - TypeName for class field shall be created in.
+	 * @param fieldIsMapped - indicates whether or not the given field is annotated
+	 * 						  with {@code JSONMapped}. 
 	 * @return field specification for the create field.
 	 */
 	@Override
-	public FieldSpec createFieldSpec(VariableElement field, TypeName fieldClass) {
+	public FieldSpec createFieldSpec(VariableElement field, ElementInfo annotationInfo, TypeName fieldClass, boolean fieldIsMapped) {
 
 		FieldSpec fieldspec = null;
+		String fieldName = field.getSimpleName().toString();
 		if (field.getAnnotation(JSONTransient.class) == null && 
 			field.getAnnotation(JsonIgnore.class) == null) {			
 			AnnotationSpec.Builder jsonPropertyAnnotationBuilder = AnnotationSpec.builder(JsonProperty.class)
@@ -435,16 +511,26 @@ public class JSONClassGenerator implements ClassGenerator {
 			}
 			AnnotationSpec jsonPropertyAnnotation = jsonPropertyAnnotationBuilder.build();
 			
-			fieldspec = FieldSpec.builder(fieldClass, field.getSimpleName().toString(), Modifier.PRIVATE)
+			TypeName fieldType = fieldClass;
+			if (fieldIsMapped) {
+				TypeMirror fieldTypeMirror = field.asType();
+				Element fieldElement = typeUtils.asElement(fieldTypeMirror);
+				if (fieldElement instanceof TypeElement) {
+					ClassName fieldClassName = ClassName.get((TypeElement) fieldElement);
+					String fcName = annotationInfo.prefix()+fieldClassName.simpleName();
+					fieldType = ClassName.get(generatePackageName(fieldClassName, annotationInfo), fcName);
+				}
+			}
+				
+			fieldspec = FieldSpec.builder(fieldType, fieldName, Modifier.PRIVATE)
 					.addAnnotation(jsonPropertyAnnotation).build();
 			
 		} else {
-			fieldspec = FieldSpec.builder(fieldClass, field.getSimpleName().toString(), Modifier.PRIVATE)
+			fieldspec = FieldSpec.builder(fieldClass, fieldName, Modifier.PRIVATE)
 					.addAnnotation(JsonIgnore.class)
 					.build();
 			
-		}
- 		
+		} 		
 		return fieldspec;
 	}
 
@@ -466,6 +552,22 @@ public class JSONClassGenerator implements ClassGenerator {
 		return packageName;
 	}
 
+	/**
+	 * Checks for annotation on provided field element.
+	 * @param field - Element for the field
+	 * @param annotationClazz - Class of the annotation
+	 * @return true if present
+	 */
+	private boolean fieldIsAnnotedWith(final Element field,
+									   Class<?> annotationClazz) {
+		TypeMirror fieldType = field.asType();
+		
+		TypeElement fieldClassElement = procEnv.getElementUtils().getTypeElement(ClassName.get(fieldType).toString());
+		return (fieldClassElement != null &&
+				fieldClassElement.getAnnotationMirrors().stream()
+								 .anyMatch(annotation -> annotation.getAnnotationType().toString()
+										 						    .equals(JSONMapped.class.getCanonicalName())));
+	}
 	
 }
 

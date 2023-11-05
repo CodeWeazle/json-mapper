@@ -18,7 +18,7 @@ public abstract class MapperBase extends AbstractProcessor {
 	public MapperBase() {
 	}
 	
-	protected ClassName getName(TypeMirror typeMirror) {
+	public static ClassName getName(TypeMirror typeMirror) {
 		if (typeMirror instanceof DeclaredType) {
 			if (((DeclaredType) typeMirror).asElement() instanceof TypeElement) {
 				return ClassName.get(getClass((TypeElement) ((DeclaredType) typeMirror).asElement()));
@@ -27,16 +27,16 @@ public abstract class MapperBase extends AbstractProcessor {
 		return null;
 	}
 	
-	protected static Class<?> getClass(TypeElement element) {
-        try {/*w w w .j  a va 2s .  c  om*/
+	public static Class<?> getClass(Element element) {
+        try {
             return Class.forName(getClassName(element));
         } catch (Exception e) {
-            //System.out.println(e);
+            System.out.println(e);
         }
         return null;
     }
 
-	protected static String getClassName(TypeElement element) {
+	public static String getClassName(Element element) {
         Element currElement = element;
         String result = element.getSimpleName().toString();
         while (currElement.getEnclosingElement() != null) {
