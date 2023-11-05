@@ -187,7 +187,6 @@ public class JSONClassGenerator implements ClassGenerator {
 		  .forEach(field -> {
 				TypeMirror fieldType = field.asType();
 				TypeName fieldClass = TypeName.get(fieldType);
-				TypeElement fieldClassElement = procEnv.getElementUtils().getTypeElement(ClassName.get(fieldType).toString());
 				boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 				messager.printMessage(Diagnostic.Kind.NOTE,"Generating field " + field.getSimpleName().toString());
 				fields.add(createFieldSpec(field, annotationInfo, fieldClass, fieldIsMapped));
@@ -364,7 +363,7 @@ public class JSONClassGenerator implements ClassGenerator {
 		MethodSpec.Builder of = MethodSpec.methodBuilder("of")
 				.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
 				.addParameter(key, incomingObjectName, new Modifier[0])
-				
+				.addStatement("if ($L == null) return null" , incomingObjectName)			
 				.addStatement(className +" newJsonObect = new "+className+"()")
 				.addException(IllegalAccessException.class)
 
@@ -385,9 +384,6 @@ public class JSONClassGenerator implements ClassGenerator {
 						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
 						String localFieldName = "field"+fieldCount.getAndIncrement();
 						boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
-						of
-						 	.addStatement("if ($L == null) return null" , incomingObjectName);
-						
 						if (!fieldIsMapped) {
 							of
 								  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
