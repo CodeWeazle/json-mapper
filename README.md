@@ -1,6 +1,6 @@
 # json-mapper
 
-*json-mapper* implements an annotation processor to generate Java classes with Jackson annotations with some convenient creation/mapping functions.
+G
 
 ## Usage
 
@@ -235,6 +235,3 @@ At the time being, the dependencies used by *json-mapper* are
 	</dependency>
 ```
 
-## Todos
-
-- implement *Builder* for generated classes (non-useLombok)
