@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.processing.Filer;
@@ -17,6 +18,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -377,15 +380,29 @@ public class JSONClassGenerator implements ClassGenerator {
 					    .build());
 		
 				AtomicInteger fieldCount = new AtomicInteger(0);
+				
+				AtomicBoolean needsSuppressWarnings = new AtomicBoolean(false); 
+				
 				annotationInfo.fields().stream().filter(field -> ! isMethodFinalPrivateStatic(field))
 												.forEach(field -> {
+													
 						TypeMirror fieldType = field.asType();
+						
 						TypeName fieldClass = TypeName.get(fieldType);
 						String fieldName = field.getSimpleName().toString();
 						String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
 						String localFieldName = "field"+fieldCount.getAndIncrement();
 						boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 						if (!fieldIsMapped) {
+							// add suppresswarnings if necessary
+							if (fieldType.getKind() == TypeKind.DECLARED) {
+								List<? extends TypeMirror> typeArguments = ((DeclaredType) fieldType).getTypeArguments();
+								if (typeArguments != null && typeArguments.size()>0) {
+									needsSuppressWarnings.set(true);
+								}
+							}						
+
+							
 							of
 								  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
 										  												 localFieldName,
@@ -428,7 +445,14 @@ public class JSONClassGenerator implements ClassGenerator {
 						}
 				});
 				of.addStatement("return newJsonObect")
-				.returns(ClassName.get(packageName, className));
+				  .returns(ClassName.get(packageName, className));
+				if (needsSuppressWarnings.get() == true) {
+					// create @SuppressWarning("unchecked") annotation
+					AnnotationSpec suppressWarningsAnnotation =  AnnotationSpec.builder(SuppressWarnings.class)
+																				.addMember("value", "$S", "unchecked")
+																				.build();
+					of.addAnnotation(suppressWarningsAnnotation);
+				}
 				methods.add(of.build());
 	}
 
