@@ -18,7 +18,9 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * 
+ * ElementInfo is a data transfer object which keeps information about the arguments of the 
+ * annotation and some additional information, such as the fields of the annotated class etc.
+ * This class is referred to in the generator as <i>annotationInfo</i>.
  */
 @Builder
 @Getter @Accessors(fluent = true)
@@ -98,10 +100,20 @@ public class ElementInfo {
 	private boolean useLombok;
 	
 	
+	/**
+	 * add an interface specification from a ClassName.
+	 * 
+	 * @param className representation of the Interface to be added.
+	 */
 	public void addInterface(ClassName className) {
 		interfaces.add(className);
 	}
 	
+	/**
+	 * checks if interface has already been added
+	 * @param className
+	 * @return true if the interface is already contained.
+	 */
 	public boolean hasInterface(ClassName className) {
 		return interfaces().stream().filter(intf-> intf.canonicalName().equals(className.canonicalName())).count()>0;
 	}

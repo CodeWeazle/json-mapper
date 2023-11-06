@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.magiccode.json</groupId>
 	<artifactId>json-mapper</artifactId>
-	<version>0.0.3</version>
+	<version>0.0.4</version>
 	<name>Json Mapper</name>
 	<description>Provides annotations for entity-json mapping dto generation</description>
 	<url>https://github.com/CodeWeazle/json-mapper</url>
@@ -79,7 +79,12 @@
 				<configuration>
 					<source>${java.version}</source>
 					<target>${java.version}</target>
+					<compilerArgs>
+	                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+	                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+					</compilerArgs>
 				</configuration>
+				
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

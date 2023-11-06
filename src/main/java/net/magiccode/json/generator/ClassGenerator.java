@@ -1,11 +1,20 @@
 package net.magiccode.json.generator;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+//import java.lang.foreign.MemorySegment;
+//import java.lang.foreign.SymbolLookup;
 import java.util.List;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -23,19 +32,21 @@ import net.magiccode.json.util.StringUtil;
 public interface ClassGenerator {
 
 	/**
-	 * @throws IOException
+	 * initiate the generation process.
+	 * 
+	 * @throws IOException if file cannot be written
 	 */
 	public void generate() throws IOException;
 	
 	/**
 	 * Generate the class code with given fields and methods
 	 * 
-	 * @param annotationInfo
-	 * @param className
-	 * @param packageName
-	 * @param fields
-	 * @param methods
-	 * @return typeSpec object containing the newly generated class
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param className - class name of the class to be created
+	 * @param packageName - the package the class to be created shall be located in.
+	 * @param fields - list of fields to be created
+	 * @param methods - list of methods to be created
+	 * @return typeSpec - object containing the newly generated class
 	 */
 	public TypeSpec generateClass(ElementInfo annotationInfo, 
 								   String className, 
@@ -46,11 +57,10 @@ public interface ClassGenerator {
 
 	/**
 	 * create no-args constructor
-	 * @param packageName
-	 * @param className
-	 * @param methods
+	 * 
+	 * @param methods - list of methods to be created
 	 */
-	default void createNoArgsConstructor(String packageName, String className, List<MethodSpec> methods) {
+	default void createNoArgsConstructor(List<MethodSpec> methods) {
 		methods.add(MethodSpec.constructorBuilder()
 							  .addModifiers(Modifier.PUBLIC)
 							  .build());
@@ -58,20 +68,73 @@ public interface ClassGenerator {
 	
 	/**
 	 * create setter method
-	 * @param field
-	 * @return
+	 * 
+	 * @param field - the VariableElement or the field the setter is to be created for. 
+	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
+	 * @return specification for setter method
 	 */
-	default MethodSpec createSetterMethodSpec(VariableElement field, ElementInfo annotationInfo) {
-        TypeMirror fieldType = field.asType();
+	default MethodSpec createSetterMethodSpec(VariableElement field, 
+											  ElementInfo annotationInfo,
+											  TypeName fieldTypeName) {
 		// create setter method
 		String className = annotationInfo.prefix() + annotationInfo.className();
 		String packageName = annotationInfo.packageName();
 		String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
+		TypeMirror type = field.asType();
+		        
 		MethodSpec.Builder setterBuilder = MethodSpec
-										   .methodBuilder(setterName)
-										   .addModifiers(Modifier.PUBLIC)
-										   .addParameter(TypeName.get(fieldType),field.getSimpleName().toString(), new Modifier[0])
-										   .addStatement("this.$L = $L", field.getSimpleName().toString(), field.getSimpleName().toString());
+				.methodBuilder(setterName)
+				.addModifiers(Modifier.PUBLIC)
+				.addParameter(fieldTypeName, field.getSimpleName().toString(), new Modifier[0]);
+
+		// DeclaredType
+		if (type.getKind() == TypeKind.DECLARED) {
+			TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
+			TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
+			TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
+			
+			List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
+			// todo: add recursion
+			// obtain type arguments
+			if (typeArguments != null && typeArguments.size()>0) {
+				final StringBuilder typeArgString = new StringBuilder();
+				typeArguments.stream().forEach(argument -> {
+					String argString = getTypeUtils().erasure(argument).toString();
+                    if (typeArgString.length() > 0) {
+                    	 typeArgString.append(",");
+                    }
+                    typeArgString.append(argString);                    
+				});
+				String typeArgs = "<"+typeArgString.toString()+">";
+				// List
+				if (type != null && 
+					getTypeUtils().isAssignable(
+						getTypeUtils().erasure(type), 
+						getTypeUtils().erasure(collectionType ))) {
+						setterBuilder.addStatement("this.$L = new $T"+typeArgs+"()", field.getSimpleName().toString(), ArrayList.class)
+									 .addStatement("this.$L.addAll($L)", field.getSimpleName().toString(),field.getSimpleName().toString());
+				// Set
+				} else if (type != null &&
+					getTypeUtils().isAssignable(
+							getTypeUtils().erasure(type), 
+							getTypeUtils().erasure(setType ))) {
+						setterBuilder.addStatement("this.$L = new $T"+typeArgs+"()", field.getSimpleName().toString(), HashSet.class)
+									 .addStatement("this.$L.addAll($L)", field.getSimpleName().toString(),field.getSimpleName().toString());
+				// Map
+				} else if (type != null && getTypeUtils().isAssignable(
+												getTypeUtils().erasure(type), 
+												getTypeUtils().erasure(mapType ))) {
+						 setterBuilder.addStatement("this.$L = new $T"+typeArgs+"()", field.getSimpleName().toString(), HashMap.class)
+					 				  .addStatement("this.$L.putAll($L)", field.getSimpleName().toString(),field.getSimpleName().toString());
+				}
+			} else {
+				setterBuilder.addStatement("this.$L = $L", field.getSimpleName().toString(), field.getSimpleName().toString());
+			} 
+		// ArrayType
+		} else if (type.getKind() == TypeKind.ARRAY) {
+			 setterBuilder.addStatement("this.$L = $L.clone()", field.getSimpleName().toString(), 
+					 										    field.getSimpleName().toString());
+		}
 		if (annotationInfo.chainedSetters()) {
 			setterBuilder.addStatement("return this")
 						 .returns(ClassName.get(packageName, className));
@@ -81,20 +144,22 @@ public interface ClassGenerator {
 
 	/**
 	 * create getter method
-	 * @param field
-	 * @param fieldClass
-	 * @return
+	 * 
+	 * @param field - the VariableElement or the field the setter is to be created for.
+	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
+	 * @return specification for getter method
 	 */
-	default MethodSpec createGetterMethodSpec(VariableElement field, TypeName fieldClass, ElementInfo annotationInfo) {
-		TypeMirror fieldType = field.asType();
+	default MethodSpec createGetterMethodSpec(VariableElement field, 
+											  ElementInfo annotationInfo,
+											  TypeName fieldTypeName) {
 		// create getter method
-		String getterName = generateGetterName(annotationInfo, field.getSimpleName().toString(), fieldType.toString().equals(Boolean.class.getName()));
+		String getterName = generateGetterName(annotationInfo, field.getSimpleName().toString(), fieldTypeName.toString().equals(Boolean.class.getName()));
 		String fieldName = field.getSimpleName().toString();
 		MethodSpec getter = MethodSpec
 				.methodBuilder(getterName)
 				.addModifiers(Modifier.PUBLIC)
 				.addStatement("return "+fieldName)
-				.returns(TypeName.get(fieldType))
+				.returns(fieldTypeName)
 				.build();
 		return getter;
 	}
@@ -102,20 +167,26 @@ public interface ClassGenerator {
 	/**
 	 * create field
 	 * 
-	 * @param field
-	 * @param fieldClass
-	 * @return
+	 * @param field - VariableElement representation of field to be created 
+	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
+	 * @param fieldClass - TypeName for class field shall be created in.
+	 * @param fieldIsMapped - indicates whether or not the given field is annotated
+	 * 						  with {@code JSONMapped}.
+	 * @return field specification for the create field.
 	 */
-	default FieldSpec createFieldSpec(VariableElement field, TypeName fieldClass) {
+	default FieldSpec createFieldSpec(VariableElement field, ElementInfo annotationInfo, TypeName fieldClass, boolean fieldIsMapped) {
 		FieldSpec fieldspec = FieldSpec.builder(fieldClass, field.getSimpleName().toString(), Modifier.PRIVATE).build();
 		return fieldspec;
 	}
 
 	/**
-	 * @param annotationInfo
-	 * @param fieldName
-	 * @param isBoolean
-	 * @return
+	 * generate a name for the field's getter method according to the specified method.
+	 * (fluent or not)
+	 * 
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param fieldName - name of the field to create the setter's name for
+	 * @param isBoolean - flag to decide whether to use 'is' or 'get'
+	 * @return the generated name for the getter
 	 */
 	default String generateGetterName(ElementInfo annotationInfo, String fieldName, Boolean isBoolean) {
 		if (annotationInfo.fluentAccessors()) {
@@ -126,9 +197,12 @@ public interface ClassGenerator {
 	}
 	
 	/**
-	 * @param annotationInfo
-	 * @param fieldName
-	 * @return
+	 * generate a name for the field's setter method according to the specified method.
+	 * (fluent or not)
+	 * 
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param fieldName - name of the field to create the setter's name for
+	 * @return the generated setter name
 	 */
 	default String generateSetterName(ElementInfo annotationInfo, String fieldName) {
 		if (annotationInfo.fluentAccessors()) {
@@ -142,12 +216,10 @@ public interface ClassGenerator {
 	/**
 	 * generate toString method
 	 * 
-	 * @param packageName
-	 * @param className
-	 * @param annotationInfo
-	 * @param methods
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param methods - list of methods to be created
 	 */
-	default void createToString(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+	default void createToString(ElementInfo annotationInfo, List<MethodSpec> methods) {
 		// create toSTring method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString")
 				.addModifiers(Modifier.PUBLIC)
@@ -176,12 +248,17 @@ public interface ClassGenerator {
 	 * check if field is declared as
 	 * final static private
 	 * 
-	 * @param field
-	 * @return
+	 * @param field -  the @see VariableElement to be checked
+	 * @return true if the given field is private, final and static
 	 */
 	default boolean isMethodFinalPrivateStatic(VariableElement field) {
 		return (field.getModifiers().contains(Modifier.FINAL) &&
 				field.getModifiers().contains(Modifier.PRIVATE) &&
 				field.getModifiers().contains(Modifier.STATIC));
 	}
+	
+	public Types getTypeUtils();
+	public Elements getElementUtils();
+	
+
 }

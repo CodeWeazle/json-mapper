@@ -1,5 +1,5 @@
 /**
- * 
+ * ClassCompiler compiles given java file into class file.
  */
 package net.magiccode.json.generator;
 
@@ -16,14 +16,23 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+
 /**
- * 
+ * Uses system java compiler to compile given .java file 
  */
 public class ClassCompiler {
 
+	/**
+	 * Compiles the given file and creates a .class file.
+	 * 
+	 * @param javaFile describes the file containing the Java code to be compiles.
+	 */
 	public void compileClass(File javaFile) {
 		
-	  // JavaCompiler
+		// JavaCompiler
 		// java version supported by tool provider
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		for(SourceVersion sv:compiler.getSourceVersions()){
@@ -31,20 +40,14 @@ public class ClassCompiler {
 		}
 		
 		
-	  // JavaCompiler
-//      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
       // DiagnosticsCollector
       DiagnosticCollector< JavaFileObject > diagnosticsCollector = new DiagnosticCollector<>();
       
       try( 
     	  StandardJavaFileManager fileManager = compiler.getStandardFileManager( diagnosticsCollector, null, null ) ) {    	  
-    	  fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File("./target")));
+    	  fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File("./target/classes")));
     	  
          File file = javaFile; 
-//        		 new File("/Users/volker/workspace_lazy/lazy-developer-01/src/main/java/net/magiccode/lazy/ExampleCode01.java" 
-        		 //CompilerExample.class.getResource("ExmpleCode01.java").toURI() 
-//        		 );
-         
          Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjectsFromFiles( Arrays.asList( file ) );
          
          JavaCompiler.CompilationTask task = compiler.getTask( null, 

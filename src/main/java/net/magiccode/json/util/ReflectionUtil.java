@@ -11,6 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import lombok.extern.log4j.Log4j2;
 
 /**
+ * Collection of utility methods used for reflection purposes, such as invoking getter and setter methods
  * 
  */
 @Log4j2
@@ -86,7 +87,10 @@ public class ReflectionUtil {
 			}
 		}
 	}
+	
 	/**
+	 * get a field from the given class or any of it's super-classes.
+	 * 
 	 * @param clazz
 	 * @param fieldName
 	 * @return
@@ -96,6 +100,9 @@ public class ReflectionUtil {
 	}
 	
 	/**
+	 * get a field from the given class or any of it's super-classes.
+	 * Setting ignoreMissing to <i>true</i> suppresses the error logging
+	 * 
 	 * @param clazz
 	 * @param fieldName
 	 * @param ignoreMissing
