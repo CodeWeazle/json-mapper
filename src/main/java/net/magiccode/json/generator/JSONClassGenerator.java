@@ -18,6 +18,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
@@ -563,6 +564,17 @@ public class JSONClassGenerator implements ClassGenerator {
 				fieldClassElement.getAnnotationMirrors().stream()
 								 .anyMatch(annotation -> annotation.getAnnotationType().toString()
 										 						    .equals(JSONMapped.class.getCanonicalName())));
+	}
+
+	@Override
+	public Types getTypeUtils() {
+		return procEnv.getTypeUtils(); 
+	}
+
+	
+	@Override
+	public Elements getElementUtils() {
+		return procEnv.getElementUtils(); 
 	}
 	
 }

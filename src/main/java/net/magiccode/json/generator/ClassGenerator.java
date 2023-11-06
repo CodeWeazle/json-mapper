@@ -1,11 +1,20 @@
 package net.magiccode.json.generator;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+//import java.lang.foreign.MemorySegment;
+//import java.lang.foreign.SymbolLookup;
 import java.util.List;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -71,11 +80,61 @@ public interface ClassGenerator {
 		String className = annotationInfo.prefix() + annotationInfo.className();
 		String packageName = annotationInfo.packageName();
 		String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
+		TypeMirror type = field.asType();
+		        
 		MethodSpec.Builder setterBuilder = MethodSpec
-										   .methodBuilder(setterName)
-										   .addModifiers(Modifier.PUBLIC)
-										   .addParameter(fieldTypeName,field.getSimpleName().toString(), new Modifier[0])
-										   .addStatement("this.$L = $L", field.getSimpleName().toString(), field.getSimpleName().toString());
+				.methodBuilder(setterName)
+				.addModifiers(Modifier.PUBLIC)
+				.addParameter(fieldTypeName, field.getSimpleName().toString(), new Modifier[0]);
+
+		// DeclaredType
+		if (type.getKind() == TypeKind.DECLARED) {
+			TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
+			TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
+			TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
+			
+			List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
+			// todo: add recursion
+			// obtain type arguments
+			if (typeArguments != null && typeArguments.size()>0) {
+				final StringBuilder typeArgString = new StringBuilder();
+				typeArguments.stream().forEach(argument -> {
+					String argString = getTypeUtils().erasure(argument).toString();
+                    if (typeArgString.length() > 0) {
+                    	 typeArgString.append(",");
+                    }
+                    typeArgString.append(argString);                    
+				});
+				String typeArgs = "<"+typeArgString.toString()+">";
+				// List
+				if (type != null && 
+					getTypeUtils().isAssignable(
+						getTypeUtils().erasure(type), 
+						getTypeUtils().erasure(collectionType ))) {
+						setterBuilder.addStatement("this.$L = new $T"+typeArgs+"()", field.getSimpleName().toString(), ArrayList.class)
+									 .addStatement("this.$L.addAll($L)", field.getSimpleName().toString(),field.getSimpleName().toString());
+				// Set
+				} else if (type != null &&
+					getTypeUtils().isAssignable(
+							getTypeUtils().erasure(type), 
+							getTypeUtils().erasure(setType ))) {
+						setterBuilder.addStatement("this.$L = new $T"+typeArgs+"()", field.getSimpleName().toString(), HashSet.class)
+									 .addStatement("this.$L.addAll($L)", field.getSimpleName().toString(),field.getSimpleName().toString());
+				// Map
+				} else if (type != null && getTypeUtils().isAssignable(
+												getTypeUtils().erasure(type), 
+												getTypeUtils().erasure(mapType ))) {
+						 setterBuilder.addStatement("this.$L = new $T"+typeArgs+"()", field.getSimpleName().toString(), HashMap.class)
+					 				  .addStatement("this.$L.putAll($L)", field.getSimpleName().toString(),field.getSimpleName().toString());
+				}
+			} else {
+				setterBuilder.addStatement("this.$L = $L", field.getSimpleName().toString(), field.getSimpleName().toString());
+			} 
+		// ArrayType
+		} else if (type.getKind() == TypeKind.ARRAY) {
+			 setterBuilder.addStatement("this.$L = $L.clone()", field.getSimpleName().toString(), 
+					 										    field.getSimpleName().toString());
+		}
 		if (annotationInfo.chainedSetters()) {
 			setterBuilder.addStatement("return this")
 						 .returns(ClassName.get(packageName, className));
@@ -198,5 +257,8 @@ public interface ClassGenerator {
 				field.getModifiers().contains(Modifier.STATIC));
 	}
 	
+	public Types getTypeUtils();
+	public Elements getElementUtils();
 	
+
 }
