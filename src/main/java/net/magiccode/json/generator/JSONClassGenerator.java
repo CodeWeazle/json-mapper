@@ -489,12 +489,25 @@ public class JSONClassGenerator implements ClassGenerator {
 						boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 						String fieldName = field.getSimpleName().toString();
 						String localFieldName = "field"+fieldCount.getAndIncrement();
+						
 						to
-							  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
-									  												 localFieldName,
-									  												 ReflectionUtil.class, 
-									  												 className+".class", 
-									  												 fieldName)					
+						.addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
+																			   localFieldName,
+																			   ReflectionUtil.class, 
+																			   className+".class", 
+																			   fieldName);
+						if (field.asType().getKind().isPrimitive()) {
+							to
+							  .beginControlFlow("if ($L != null)" , localFieldName)
+								.addStatement("$T.invokeSetterMethod($L, $L, $L"+(fieldIsMapped?".to()":"")+")",
+										   		  ReflectionUtil.class, 
+										   		  objectName,
+										   		  localFieldName,
+										   		  fieldName)
+							  .endControlFlow();
+							
+						} else {
+						to	  
 							  .beginControlFlow("if ($L != null && $L != null)" , localFieldName, fieldName)
 								.addStatement("$T.invokeSetterMethod($L, $L, $L"+(fieldIsMapped?".to()":"")+")",
 										   		  ReflectionUtil.class, 
@@ -502,6 +515,8 @@ public class JSONClassGenerator implements ClassGenerator {
 										   		  localFieldName,
 										   		  fieldName)
 							  .endControlFlow();
+						}
+												
 				});
 				to.addStatement("return $L", objectName)
 				.returns(ClassName.get(packageName, className));

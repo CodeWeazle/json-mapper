@@ -15,7 +15,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
       <dependency>
 	 	<groupId>net.magiccode.json</groupId>
 		<artifactId>json-mapper</artifactId>
-		<version>0.0.4</version>
+		<version>0.0.5</version>
       </dependency>
       ...
     </dependencies>
@@ -34,7 +34,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 						<path>
 							<groupId>net.magiccode.json</groupId>
 							<artifactId>json-mapper</artifactId>
-							<version>0.0.4</version>
+							<version>0.0.5</version>
 						</path>
 						...
 					</annotationProcessorPaths>
