@@ -121,7 +121,7 @@ Fields, of course, will be generated with (at least) @JsonProperty or @JsonIgnor
 Assuming we have a class that looks as follows:
 
 ```
-public class **Example01** {
+public class Example01 {
 
 	private String field01;
 	
@@ -139,7 +139,7 @@ When we add the annotation @JSONMapped (and assume we did not set a different pr
         mappedClass = Example01.class
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class **JSONExample01** implements Serializable {
+public class JSONExample01 implements Serializable {
 
 	  @JsonProperty("field01")
     private String field01;
