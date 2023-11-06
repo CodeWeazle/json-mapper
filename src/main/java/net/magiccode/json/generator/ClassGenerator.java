@@ -134,6 +134,14 @@ public interface ClassGenerator {
 		} else if (type.getKind() == TypeKind.ARRAY) {
 			 setterBuilder.addStatement("this.$L = $L.clone()", field.getSimpleName().toString(), 
 					 										    field.getSimpleName().toString());
+		} else if (type.getKind() != TypeKind.PACKAGE &&
+				   type.getKind() != TypeKind.MODULE &&
+				   type.getKind() != TypeKind.ERROR &&
+				   type.getKind() != TypeKind.EXECUTABLE &&
+				   type.getKind() != TypeKind.UNION &&
+				   type.getKind() != TypeKind.NULL) {
+			setterBuilder.addStatement("this.$L = $L", field.getSimpleName().toString(), 
+					    							   field.getSimpleName().toString());
 		}
 		if (annotationInfo.chainedSetters()) {
 			setterBuilder.addStatement("return this")
