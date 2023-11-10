@@ -1,14 +1,20 @@
 package net.magiccode.json.generator;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 //import java.lang.foreign.MemorySegment;
 //import java.lang.foreign.SymbolLookup;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
@@ -20,9 +26,11 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
+import net.magiccode.json.annotation.JSONMapped;
 import net.magiccode.json.util.StringUtil;
 
 /**
@@ -82,37 +90,52 @@ public interface ClassGenerator {
 		String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
 		TypeMirror type = field.asType();
 		        
+		TypeName fieldType = checkFieldTypeForCollections(annotationInfo, type, fieldTypeName);
+		
 		MethodSpec.Builder setterBuilder = MethodSpec
 				.methodBuilder(setterName)
 				.addModifiers(Modifier.PUBLIC)
-				.addParameter(fieldTypeName, field.getSimpleName().toString(), new Modifier[0]);
+				.addParameter(fieldType, field.getSimpleName().toString(), new Modifier[0]);
 
 		// DeclaredType
 		if (type.getKind() == TypeKind.DECLARED) {
-			TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
-			TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
-			TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
 			
-			List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
+			List<TypeName> typeArguments = obtainTypeArguments(type);
+			
 			// todo: add recursion
 			// obtain type arguments
 			if (typeArguments != null && typeArguments.size()>0) {
 				final StringBuilder typeArgString = new StringBuilder();
 				typeArguments.stream().forEach(argument -> {
-					String argString = getTypeUtils().erasure(argument).toString();
+					String argString = argument.toString();
                     if (typeArgString.length() > 0) {
                     	 typeArgString.append(",");
+                    }
+                    
+                    Element argumentElement = getElementUtils().getTypeElement(argString);
+					boolean argumentIsMapped = fieldIsAnnotedWith(argumentElement, JSONMapped.class);
+                    if (argumentIsMapped) {
+						if (argumentElement instanceof TypeElement) {
+							ClassName argumentClassName = ClassName.get((TypeElement) argumentElement); 
+							String fcName = annotationInfo.prefix()+argumentClassName.simpleName();
+							ClassName mappedFieldClassName = ClassName.get(generatePackageName(argumentClassName, annotationInfo), fcName);
+							argString = mappedFieldClassName.canonicalName();
+						}
                     }
                     typeArgString.append(argString);                    
 				});
 				String typeArgs = "<"+typeArgString.toString()+">";
+
+				TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
+				TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
+				TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
 				// List
 				if (type != null && 
 					getTypeUtils().isAssignable(
 						getTypeUtils().erasure(type), 
 						getTypeUtils().erasure(collectionType ))) {
 						setterBuilder.addStatement("this.$L = new $T"+typeArgs+"()", field.getSimpleName().toString(), ArrayList.class)
-									 .addStatement("this.$L.addAll($L)", field.getSimpleName().toString(),field.getSimpleName().toString());
+									 .addStatement("this.$L.addAll($L)", field.getSimpleName().toString(),field.getSimpleName().toString());						
 				// Set
 				} else if (type != null &&
 					getTypeUtils().isAssignable(
@@ -163,11 +186,15 @@ public interface ClassGenerator {
 		// create getter method
 		String getterName = generateGetterName(annotationInfo, field.getSimpleName().toString(), fieldTypeName.toString().equals(Boolean.class.getName()));
 		String fieldName = field.getSimpleName().toString();
+		
+		TypeMirror type = field.asType();
+		TypeName fieldType = checkFieldTypeForCollections(annotationInfo, type, fieldTypeName);
+		
 		MethodSpec getter = MethodSpec
 				.methodBuilder(getterName)
 				.addModifiers(Modifier.PUBLIC)
 				.addStatement("return "+fieldName)
-				.returns(fieldTypeName)
+				.returns(fieldType)
 				.build();
 		return getter;
 	}
@@ -265,6 +292,117 @@ public interface ClassGenerator {
 				field.getModifiers().contains(Modifier.STATIC));
 	}
 	
+	/**
+	 * Checks for annotation on provided field element.
+	 * @param field - Element for the field
+	 * @param annotationClazz - Class of the annotation
+	 * @return true if present
+	 */
+	default boolean fieldIsAnnotedWith(final Element field,
+									   Class<?> annotationClazz) {
+		TypeMirror fieldType = field.asType();
+		
+		TypeElement fieldClassElement = getElementUtils().getTypeElement(ClassName.get(fieldType).toString());
+		return (fieldClassElement != null &&
+				fieldClassElement.getAnnotationMirrors().stream()
+								 .anyMatch(annotation -> annotation.getAnnotationType().toString()
+										 						    .equals(annotationClazz.getCanonicalName())));
+	}
+	/**
+	 * @param annotationInfo
+	 * @param type
+	 * @param fieldType
+	 * @return
+	 */
+	default TypeName checkFieldTypeForCollections(ElementInfo annotationInfo, TypeMirror type, TypeName fieldType) {
+		if (type.getKind() == TypeKind.DECLARED) {			
+			List<TypeName> typeArguments = obtainTypeArguments(type);
+			// obtain type arguments
+			List<TypeName> types = collectTypes(annotationInfo, typeArguments);							
+			TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
+			TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
+			TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
+			// List
+			if (type != null && 
+				getTypeUtils().isAssignable(
+					getTypeUtils().erasure(type), 
+					getTypeUtils().erasure(collectionType ))) {
+					fieldType = ParameterizedTypeName.get(ClassName.get(List.class), types.get(0));
+			// Set
+			} else if (type != null &&
+				getTypeUtils().isAssignable(
+						getTypeUtils().erasure(type), 
+						getTypeUtils().erasure(setType ))) {
+				fieldType = ParameterizedTypeName.get(ClassName.get(Set.class), types.get(0));
+			// Map
+			} else if (type != null && getTypeUtils().isAssignable(
+											getTypeUtils().erasure(type), 
+											getTypeUtils().erasure(mapType ))) {
+				fieldType = ParameterizedTypeName.get(ClassName.get(Map.class), types.get(0), types.get(1));
+			}
+		}
+		return fieldType;
+	}
+
+	default List<TypeName> obtainTypeArguments(TypeMirror type) {
+		List<? extends TypeMirror> typeArgumentMirrors = ((DeclaredType) type).getTypeArguments();
+		List<TypeName> typeArguments = new ArrayList<>(typeArgumentMirrors.size());
+		if (typeArgumentMirrors.size()>0) {
+			typeArguments.addAll(typeArgumentMirrors.stream().map(arg -> TypeName.get(arg)).collect(Collectors.toList()));
+		}
+		return typeArguments;
+	}
+
+	/**
+	 * Collect types of a parametrized field
+	 * 
+	 * @param annotationInfo
+	 * @param typeArguments
+	 * @return
+	 */
+	default List<TypeName> collectTypes(ElementInfo annotationInfo, 
+										 List<TypeName> typeArguments) { 
+										 List<TypeName> types = new ArrayList<>();
+		if (typeArguments != null && typeArguments.size()>0) {
+			typeArguments.stream().forEach(argument -> {
+				String argString = argument.toString();
+		        Element argumentElement = getElementUtils().getTypeElement(argString);
+				boolean argumentIsMapped = fieldIsAnnotedWith(argumentElement, JSONMapped.class);                    
+				if (argumentElement instanceof TypeElement) {
+					ClassName argumentClassName = ClassName.get((TypeElement) argumentElement); 
+					
+//					ClassName argumentClassName = ClassName.get(argumentElement.asType());
+					
+					String fcName = annotationInfo.prefix()+argumentElement.getSimpleName();
+					TypeName mappedFieldClassName = ClassName.get(generatePackageName(argumentClassName, annotationInfo), fcName);
+					if (argumentIsMapped) 
+						types.add(mappedFieldClassName);
+					else
+						types.add(argumentClassName);
+				}
+			});
+		}
+		return types;
+	}
+
+	/**
+	 * generates the package name base on the given annotation arguments
+	 * 
+	 * @param key
+	 * @param annotationInfo
+	 * @return
+	 */
+	default String generatePackageName(ClassName key, ElementInfo annotationInfo) {
+		String packageName = annotationInfo.packageName();
+		if (StringUtil.isBlank(packageName)) {
+			packageName = key.packageName();
+			if (StringUtil.isNotBlank(annotationInfo.subpackageName())) {
+				packageName += "." + annotationInfo.subpackageName();
+			}
+		}
+		return packageName;
+	}
+
 	public Types getTypeUtils();
 	public Elements getElementUtils();
 	
