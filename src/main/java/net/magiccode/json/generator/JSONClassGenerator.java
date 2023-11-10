@@ -793,15 +793,15 @@ public class JSONClassGenerator implements ClassGenerator {
 							getTypeUtils().erasure(fieldType), 
 							getTypeUtils().erasure(setType)))) {
 						
-						generateMappingStatementTo(methods,
-												   objectName, 
-												   to,
-												   fieldClass, 
-												   fieldName, 
-												   localFieldName,
-												   typeArguments, 
-												   types, 
-												   fieldIsMapped); 
+						generateListTypeMappingStatementTo(methods,
+														   objectName, 
+														   to,
+														   fieldClass, 
+														   fieldName, 
+														   localFieldName,
+														   typeArguments, 
+														   types, 
+														   fieldIsMapped); 
 					} else {
 						createStatementForUnmappedFieldTo(objectName, to, fieldIsMapped, fieldName, localFieldName);
 					}
@@ -831,7 +831,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param typeArguments
 	 * @param types
 	 */
-	private void generateMappingStatementTo(final List<MethodSpec> methods, 
+	private void generateListTypeMappingStatementTo(final List<MethodSpec> methods, 
 											String objectName, 
 											MethodSpec.Builder to,
 											final TypeName destinationFieldClass, 
