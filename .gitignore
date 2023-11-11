@@ -31,3 +31,4 @@ org.*/
 .metadata/
 
 pom.xml.swp
+.factorypath
