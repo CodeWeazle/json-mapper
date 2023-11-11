@@ -60,7 +60,7 @@ public interface ClassGenerator {
 								   String className, 
 								   String packageName,
 								   List<FieldSpec> fields, 
-								   List<MethodSpec> methods);	
+								   Map<String, MethodSpec> methods);	
 	
 
 	/**
@@ -68,8 +68,8 @@ public interface ClassGenerator {
 	 * 
 	 * @param methods - list of methods to be created
 	 */
-	default void createNoArgsConstructor(List<MethodSpec> methods) {
-		methods.add(MethodSpec.constructorBuilder()
+	default void createNoArgsConstructor(Map<String, MethodSpec> methods) {
+		methods.put("_constructor", MethodSpec.constructorBuilder()
 							  .addModifiers(Modifier.PUBLIC)
 							  .build());
 	}
@@ -81,9 +81,10 @@ public interface ClassGenerator {
 	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
 	 * @return specification for setter method
 	 */
-	default MethodSpec createSetterMethodSpec(VariableElement field, 
+	default void createSetterMethodSpec(VariableElement field, 
 											  ElementInfo annotationInfo,
-											  TypeName fieldTypeName) {
+											  TypeName fieldTypeName,
+											  final Map<String, MethodSpec> methods) {
 		// create setter method
 		String className = annotationInfo.prefix() + annotationInfo.className();
 		String packageName = annotationInfo.packageName();
@@ -170,7 +171,7 @@ public interface ClassGenerator {
 			setterBuilder.addStatement("return this")
 						 .returns(ClassName.get(packageName, className));
 		}
-		return setterBuilder.build();
+		methods.put(setterName,setterBuilder.build());
 	}
 
 	/**
@@ -180,9 +181,10 @@ public interface ClassGenerator {
 	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
 	 * @return specification for getter method
 	 */
-	default MethodSpec createGetterMethodSpec(VariableElement field, 
-											  ElementInfo annotationInfo,
-											  TypeName fieldTypeName) {
+	default void createGetterMethodSpec(VariableElement field, 
+										  ElementInfo annotationInfo,
+										  TypeName fieldTypeName,
+										  final Map<String, MethodSpec> methods) {
 		// create getter method
 		String getterName = generateGetterName(annotationInfo, field.getSimpleName().toString(), fieldTypeName.toString().equals(Boolean.class.getName()));
 		String fieldName = field.getSimpleName().toString();
@@ -196,7 +198,7 @@ public interface ClassGenerator {
 				.addStatement("return "+fieldName)
 				.returns(fieldType)
 				.build();
-		return getter;
+		methods.put(getterName, getter);
 	}
 
 	/**
@@ -254,8 +256,8 @@ public interface ClassGenerator {
 	 * @param annotationInfo - information about the annotation arguments
 	 * @param methods - list of methods to be created
 	 */
-	default void createToString(ElementInfo annotationInfo, List<MethodSpec> methods) {
-		// create toSTring method
+	default void createToString(ElementInfo annotationInfo, Map<String, MethodSpec> methods) {
+		// create toSTring method		
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString")
 				.addModifiers(Modifier.PUBLIC)
 				.addStatement("$T stringRep = this.getClass().getName()+ \"(\"", String.class);
@@ -276,7 +278,7 @@ public interface ClassGenerator {
 							    .build());
 		
 		toStringBuilder.returns(ClassName.get(String.class));
-		methods.add(toStringBuilder.build());
+		methods.put("toString", toStringBuilder.build());
 	}
 
 	/**
@@ -301,13 +303,24 @@ public interface ClassGenerator {
 	default boolean fieldIsAnnotedWith(final Element field,
 									   Class<?> annotationClazz) {
 		TypeMirror fieldType = field.asType();
-		
-		TypeElement fieldClassElement = getElementUtils().getTypeElement(ClassName.get(fieldType).toString());
-		return (fieldClassElement != null &&
-				fieldClassElement.getAnnotationMirrors().stream()
+		TypeElement typeElement = getElementUtils().getTypeElement(ClassName.get(fieldType).toString());		
+		return typeIsAnnotatedWith(annotationClazz, typeElement);
+	}
+
+	/**
+	 * @param annotationClazz
+	 * @param typeElement
+	 * @return
+	 */
+	default boolean typeIsAnnotatedWith(Class<?> annotationClazz, TypeElement typeElement) {
+		return (typeElement != null &&
+				typeElement.getAnnotationMirrors().stream()
 								 .anyMatch(annotation -> annotation.getAnnotationType().toString()
 										 						    .equals(annotationClazz.getCanonicalName())));
 	}
+	
+		
+	
 	/**
 	 * @param annotationInfo
 	 * @param type
@@ -316,9 +329,9 @@ public interface ClassGenerator {
 	 */
 	default TypeName checkFieldTypeForCollections(ElementInfo annotationInfo, TypeMirror type, TypeName fieldType) {
 		if (type.getKind() == TypeKind.DECLARED) {			
-			List<TypeName> typeArguments = obtainTypeArguments(type);
+			List<TypeName> sourceTypeArguments = obtainTypeArguments(type);
 			// obtain type arguments
-			List<TypeName> types = collectTypes(annotationInfo, typeArguments);							
+			List<TypeName> destinationTypeArguments = collectTypes(annotationInfo, sourceTypeArguments);							
 			TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
 			TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
 			TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
@@ -327,18 +340,18 @@ public interface ClassGenerator {
 				getTypeUtils().isAssignable(
 					getTypeUtils().erasure(type), 
 					getTypeUtils().erasure(collectionType ))) {
-					fieldType = ParameterizedTypeName.get(ClassName.get(List.class), types.get(0));
+					fieldType = ParameterizedTypeName.get(ClassName.get(List.class), destinationTypeArguments.get(0));
 			// Set
 			} else if (type != null &&
 				getTypeUtils().isAssignable(
 						getTypeUtils().erasure(type), 
 						getTypeUtils().erasure(setType ))) {
-				fieldType = ParameterizedTypeName.get(ClassName.get(Set.class), types.get(0));
+				fieldType = ParameterizedTypeName.get(ClassName.get(Set.class), destinationTypeArguments.get(0));
 			// Map
 			} else if (type != null && getTypeUtils().isAssignable(
 											getTypeUtils().erasure(type), 
 											getTypeUtils().erasure(mapType ))) {
-				fieldType = ParameterizedTypeName.get(ClassName.get(Map.class), types.get(0), types.get(1));
+				fieldType = ParameterizedTypeName.get(ClassName.get(Map.class), destinationTypeArguments.get(0), destinationTypeArguments.get(1));
 			}
 		}
 		return fieldType;
@@ -354,7 +367,8 @@ public interface ClassGenerator {
 	}
 
 	/**
-	 * Collect types of a parametrized field
+	 * Collect types of a parametrized field and return mapped type
+	 * if any of them is annotated with {@code @JSONMapped} itself.
 	 * 
 	 * @param annotationInfo
 	 * @param typeArguments
@@ -369,10 +383,8 @@ public interface ClassGenerator {
 		        Element argumentElement = getElementUtils().getTypeElement(argString);
 				boolean argumentIsMapped = fieldIsAnnotedWith(argumentElement, JSONMapped.class);                    
 				if (argumentElement instanceof TypeElement) {
-					ClassName argumentClassName = ClassName.get((TypeElement) argumentElement); 
-					
-//					ClassName argumentClassName = ClassName.get(argumentElement.asType());
-					
+					// class of the argument
+					ClassName argumentClassName = ClassName.get((TypeElement) argumentElement);					
 					String fcName = annotationInfo.prefix()+argumentElement.getSimpleName();
 					TypeName mappedFieldClassName = ClassName.get(generatePackageName(argumentClassName, annotationInfo), fcName);
 					if (argumentIsMapped) 

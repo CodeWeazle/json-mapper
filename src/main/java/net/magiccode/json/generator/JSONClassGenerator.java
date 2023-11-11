@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,7 +20,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -108,7 +108,7 @@ public class JSONClassGenerator implements ClassGenerator {
 							+ ", generated class " + packageName + "." + className);
 
 					List<FieldSpec> fields = new ArrayList<>();
-					List<MethodSpec> methods = new ArrayList<>();
+					Map<String, MethodSpec> methods = new HashMap<>();
 
 					// when using lombok, we only need to generate the fields
 					if (annotationInfo.useLombok()) {
@@ -148,7 +148,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param methods        - list of methods to be created
 	 */
 	private void createFieldsGettersAndSetters(ElementInfo annotationInfo, List<FieldSpec> fields,
-			List<MethodSpec> methods) {
+			Map<String, MethodSpec> methods) {
 		// Generate fields, getters and setters
 		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
 
@@ -167,8 +167,8 @@ public class JSONClassGenerator implements ClassGenerator {
 			}
 
 			fields.add(createFieldSpec(field, annotationInfo, fieldTypeName, fieldIsMapped));
-			methods.add(createGetterMethodSpec(field, annotationInfo, fieldTypeName));
-			methods.add(createSetterMethodSpec(field, annotationInfo, fieldTypeName));
+			createGetterMethodSpec(field, annotationInfo, fieldTypeName, methods);
+			createSetterMethodSpec(field, annotationInfo, fieldTypeName, methods);
 		});
 	}
 
@@ -201,7 +201,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @return typeSpec - object containing the newly generated class
 	 */
 	public TypeSpec generateClass(ElementInfo annotationInfo, String className, String packageName,
-			List<FieldSpec> fields, List<MethodSpec> methods) {
+			List<FieldSpec> fields, Map<String, MethodSpec> methods) {
 		DateTimeFormatter pattern = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		TypeSpec.Builder generatedJSONClassBuilder = TypeSpec.classBuilder(className).addModifiers(Modifier.PUBLIC)
 				.addJavadoc(CodeBlock.builder()
@@ -210,7 +210,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				.addSuperinterface(Serializable.class)
 				.addField(FieldSpec.builder(TypeName.LONG, "serialVersionUID", Modifier.FINAL, Modifier.STATIC)
 						.initializer("-1L").build())
-				.addFields(fields).addMethods(methods)
+				.addFields(fields).addMethods(methods.values())
 				.addAnnotation(AnnotationSpec.builder(JSONMappedBy.class)
 						.addMember("mappedClass", "$T.class", ClassName.get(annotationInfo.element())).build())
 				.addAnnotation(AnnotationSpec.builder(JsonInclude.class)
@@ -250,7 +250,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * 
 	 * @param methods - list of methods to be creatd.
 	 */
-	private void createToJSONString(List<MethodSpec> methods) {
+	private void createToJSONString(Map<String, MethodSpec> methods) {
 		// create toJSONString method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toJSONString").addModifiers(Modifier.PUBLIC)
 				.addJavadoc(CodeBlock.builder().add("provides a formatted JSON string with all fields\n")
@@ -261,7 +261,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				.endControlFlow().beginControlFlow("catch ($T e)", JsonProcessingException.class)
 				.addStatement("e.printStackTrace()").endControlFlow().addStatement("return value")
 				.returns(ClassName.get(String.class));
-		methods.add(toStringBuilder.build());
+		methods.put("toJSONString",  toStringBuilder.build());
 	}
 
 	/**
@@ -277,23 +277,23 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param methods
 	 */
 	private void createOfWithArguments(String packageName, String className, ElementInfo annotationInfo,
-			List<MethodSpec> methods) {
+			Map<String, MethodSpec> methods) {
 		// create of method
-		String incomingObjectName = "incoming"+className;
+//		String incomingObjectName = "incoming"+className;
 		
 		MethodSpec.Builder of = MethodSpec.methodBuilder("of").addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-				.addStatement(className + " newJsonObect = new " + className + "();")
+				.addStatement(className + " newJsonObject = new " + className + "();")
 				.addException(IllegalAccessException.class)
 				.addJavadoc(CodeBlock.builder()
 						.add("Creates object with all given values, acts basically as a AllArgsConstructor.\n")
 						.build());
 
-		AtomicInteger fieldCount = new AtomicInteger(0);
+//		AtomicInteger fieldCount = new AtomicInteger(0);
 		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
 
 			TypeMirror fieldType = field.asType();
 			String fieldName = field.getSimpleName().toString();
-			String localFieldName = "field"+fieldCount.getAndIncrement();
+//			String localFieldName = "field"+fieldCount.getAndIncrement();
 			TypeName fieldClass = TypeName.get(fieldType);
 			of.addParameter(fieldClass, field.getSimpleName().toString(), new Modifier[0]);
 
@@ -314,7 +314,6 @@ public class JSONClassGenerator implements ClassGenerator {
 						boolean[] argumentIsMapped = new boolean[typeArguments.size()];
 						
 						for (int i=0; i < typeArguments.size(); i++) {
-//							argumentElement[i] = getElementUtils().getTypeElement(getTypeUtils().erasure(typeArguments.get(i)).toString());
 							argumentElement[i] = getElementUtils().getTypeElement(typeArguments.get(i).toString());							
 							argumentIsMapped[i] = fieldIsAnnotedWith(argumentElement[i], JSONMapped.class);
 						}
@@ -326,12 +325,30 @@ public class JSONClassGenerator implements ClassGenerator {
 							 getTypeUtils().isAssignable(
 									getTypeUtils().erasure(fieldType), 
 									getTypeUtils().erasure(setType )))) {
-							generateMappingStatementForOfWithArguments(methods, incomingObjectName, of, fieldClass, fieldName, setterName, localFieldName, typeArguments, types);
-						} 				
+							generateMappingStatementForCollectionForOfWithArguments(methods, 
+																					 of, 
+																					 fieldName, 
+																					 setterName, 
+																					 typeArguments, types);
+						} else if (argumentElement.length > 1 && 
+								  (argumentIsMapped[0] || argumentIsMapped[1]) &&
+								  fieldType != null && getTypeUtils().isAssignable(
+										getTypeUtils().erasure(fieldType), 
+										getTypeUtils().erasure(mapType ))) {
+//!!! Maps							
+							 generateMappingStatementForMapForOfWithArguments(methods, 
+																			  of,
+																			  fieldName, 
+																			  setterName, 
+																			  typeArguments, 
+																			  types);
+							
+							
+						}			
 					} else {
-						of.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());				
+						of.addStatement("newJsonObject.$L($L)", setterName, field.getSimpleName().toString());				
 					}
-				} else {		of.addStatement("newJsonObect.$L($L)", setterName, field.getSimpleName().toString());  }
+				} else {		of.addStatement("newJsonObject.$L($L)", setterName, field.getSimpleName().toString());  }
 			} else {
 				TypeMirror fieldTypeMirror = field.asType();
 				Element fieldElement = typeUtils.asElement(fieldTypeMirror);
@@ -340,36 +357,36 @@ public class JSONClassGenerator implements ClassGenerator {
 					String fcName = annotationInfo.prefix() + fieldClassName.simpleName();
 					ClassName mappedFieldClassName = ClassName.get(generatePackageName(fieldClassName, annotationInfo),
 							fcName);
-					of.addStatement("newJsonObect.$L($T.of($L))", setterName, mappedFieldClassName,
+					of.addStatement("newJsonObject.$L($T.of($L))", setterName, mappedFieldClassName,
 							field.getSimpleName().toString());
 				}
 			}
 		});
-		of.addStatement("return newJsonObect")
+		of.addStatement("return newJsonObject")
 
 				.returns(ClassName.get(packageName, className));
-		methods.add(of.build());
+		methods.put("ofWithArguments", of.build());
 	}
 
 	/**
 	 * generates an <i>of</i>-method which takes the annotated class as an argument
 	 * and returns an instance of the generated class with copies of all fields
 	 * 
-	 * @param key
+	 * @param incomingObjectClass
 	 * @param packageName
 	 * @param className
 	 * @param annotationInfo
 	 * @param methods
 	 */
-	private void createOfWithClass(ClassName key, String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+	private void createOfWithClass(ClassName incomingObjectClass, String packageName, String className, ElementInfo annotationInfo, Map<String, MethodSpec> methods) {
 		// create of method
-		String incomingObjectName = "incoming"+key.simpleName();
+		String incomingObjectName = "incoming"+incomingObjectClass.simpleName();
 		
 		MethodSpec.Builder of = MethodSpec.methodBuilder("of")
 				.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-				.addParameter(key, incomingObjectName, new Modifier[0])
+				.addParameter(incomingObjectClass, incomingObjectName, new Modifier[0])
 				.addStatement("if ($L == null) return null" , incomingObjectName)			
-				.addStatement("$L newJsonObect = new $L()", className, className)
+				.addStatement("$L newJsonObject = new $L()", className, className)
 				.addException(IllegalAccessException.class)
 
 				.addJavadoc(CodeBlock
@@ -377,7 +394,7 @@ public class JSONClassGenerator implements ClassGenerator {
 					    .add("Creates object from source class. Since source class has not been compiled at this point,\n")
 					    .add("calling the setters on the source would lead to an exception.\n")
 					    .add("For this reason the getter call is wrapped by reflection.\n\n")
-					    .add("@param $L - the incoming object of type $L to be mapped.", incomingObjectName, key.simpleName())
+					    .add("@param $L - the incoming object of type $L to be mapped.", incomingObjectName, incomingObjectClass.simpleName())
 					    .build());
 		
 				AtomicInteger fieldCount = new AtomicInteger(0);
@@ -388,20 +405,21 @@ public class JSONClassGenerator implements ClassGenerator {
 					TypeMirror fieldType = field.asType();
 					
 					TypeName fieldClass = TypeName.get(fieldType);
+					
 					String fieldName = field.getSimpleName().toString();
 					String setterName = generateSetterName(annotationInfo, field.getSimpleName().toString());
 					String localFieldName = "field"+fieldCount.getAndIncrement();
 					boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 						
 					if (!fieldIsMapped) {
-						createStatementForMappedFieldOf(className, annotationInfo, methods, incomingObjectName, of,
+						createStatementForMappedFieldOf(incomingObjectClass, annotationInfo, methods, incomingObjectName, of,
 								needsSuppressWarnings, fieldType, fieldClass, fieldName, setterName, localFieldName);
 					} else {
-						createStatementForUnmappedFieldOf(className, annotationInfo, incomingObjectName, of, field,
+						createStatementForUnmappedFieldOf(incomingObjectClass, annotationInfo, incomingObjectName, of, field,
 								fieldClass, fieldName, setterName, localFieldName);							
 					}
 				});
-				of.addStatement("return newJsonObect")
+				of.addStatement("return newJsonObject")
 				  .returns(ClassName.get(packageName, className));
 				if (needsSuppressWarnings.get() == true) {
 					// create @SuppressWarning("unchecked") annotation
@@ -410,7 +428,7 @@ public class JSONClassGenerator implements ClassGenerator {
 																				.build();
 					of.addAnnotation(suppressWarningsAnnotation);
 				}
-				methods.add(of.build());
+				methods.put("of", of.build());
 	}
 
 	/**
@@ -424,7 +442,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param setterName
 	 * @param localFieldName
 	 */
-	private void createStatementForUnmappedFieldOf(String className, ElementInfo annotationInfo, String incomingObjectName,
+	private void createStatementForUnmappedFieldOf(ClassName incomingObjectClass, ElementInfo annotationInfo, String incomingObjectName,
 			MethodSpec.Builder of, VariableElement field, TypeName fieldClass, String fieldName, String setterName,
 			String localFieldName) {
 		TypeMirror fieldTypeMirror = field.asType();
@@ -434,14 +452,15 @@ public class JSONClassGenerator implements ClassGenerator {
 			String fcName = annotationInfo.prefix()+fieldClassName.simpleName();
 			ClassName mappedFieldClassName = ClassName.get(generatePackageName(fieldClassName, annotationInfo), fcName);
 			of
-			  .addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
+			  .addStatement("$T $L = $T.deepGetField($T.class, $S, true)", Field.class,
 					  												 localFieldName,
-					  												 ReflectionUtil.class, 
-					  												 className+".class", 
+					  												 ReflectionUtil.class,
+					  												 incomingObjectClass,
+//					  												 className+".class", 
 					  												 fieldName)
 
 			  .beginControlFlow("if ($L != null)" , localFieldName)
-				.addStatement("newJsonObect.$L($T.of(($L)$T.invokeGetterMethod($L, $L)))",  
+				.addStatement("newJsonObject.$L($T.of(($L)$T.invokeGetterMethod($L, $L)))",  
 								  setterName,
 								  mappedFieldClassName,
 						   		  fieldClass,
@@ -465,31 +484,31 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param setterName
 	 * @param localFieldName
 	 */
-	private void createStatementForMappedFieldOf(String className, ElementInfo annotationInfo, List<MethodSpec> methods,
+	private void createStatementForMappedFieldOf(ClassName incomingObjectClass, ElementInfo annotationInfo, Map<String, MethodSpec> methods,
 			String incomingObjectName, MethodSpec.Builder of, AtomicBoolean needsSuppressWarnings, TypeMirror fieldType,
 			TypeName fieldClass, String fieldName, String setterName, String localFieldName) {
 		of
-		.addStatement("$T $L = $T.deepGetField($L, $S, true)", Field.class,
-				localFieldName,
-				ReflectionUtil.class, 
-				className+".class", 
-				fieldName)
+		.addStatement("$T $L = $T.deepGetField($T.class, $S, true)", Field.class,
+																localFieldName,
+																ReflectionUtil.class, 
+																incomingObjectClass, 
+																fieldName)
 		.beginControlFlow("if ($L != null)" , localFieldName);
 		// add suppresswarnings if necessary
 		if (fieldType.getKind() == TypeKind.DECLARED) {
-			List<TypeName> typeArguments = obtainTypeArguments(fieldType);							
-			List<TypeName> types = collectTypes(annotationInfo, typeArguments);
+			List<TypeName> sourceTypeArguments = obtainTypeArguments(fieldType);							
+			List<TypeName> destinationTypeArguments = collectTypes(annotationInfo, sourceTypeArguments);
 			
 			TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
 			TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
 			TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
 
-			if (typeArguments != null && typeArguments.size()>0) {
-				Element[] argumentElement = new Element[typeArguments.size()];
-				boolean[] argumentIsMapped = new boolean[typeArguments.size()];
+			if (sourceTypeArguments != null && sourceTypeArguments.size()>0) {
+				Element[] argumentElement = new Element[sourceTypeArguments.size()];
+				boolean[] argumentIsMapped = new boolean[sourceTypeArguments.size()];
 				
-				for (int i=0; i < typeArguments.size(); i++) {
-					argumentElement[i] = getElementUtils().getTypeElement(typeArguments.get(i).toString());
+				for (int i=0; i < sourceTypeArguments.size(); i++) {
+					argumentElement[i] = getElementUtils().getTypeElement(sourceTypeArguments.get(i).toString());
 					argumentIsMapped[i] = fieldIsAnnotedWith(argumentElement[i], JSONMapped.class);
 					needsSuppressWarnings.set(true);
 				}
@@ -501,43 +520,28 @@ public class JSONClassGenerator implements ClassGenerator {
 					 getTypeUtils().isAssignable(
 							getTypeUtils().erasure(fieldType), 
 							getTypeUtils().erasure(setType )))) {
-					generateMappingStatementOf(methods, incomingObjectName, of, fieldClass, fieldName, setterName, localFieldName, typeArguments, types);
+					generateMappingStatementForCollectionForOf(methods, incomingObjectName, of, fieldClass, fieldName, setterName, localFieldName, sourceTypeArguments, destinationTypeArguments);
 				} 
 				else if (argumentElement.length > 1 && (argumentIsMapped[0] || argumentIsMapped[1]) &&
 						fieldType != null && getTypeUtils().isAssignable(
 												getTypeUtils().erasure(fieldType), 
 												getTypeUtils().erasure(mapType ))) {
 					
-//									TypeName[] mappedTypeNames = {fieldIsAnnotedWith(field, JSONMapped.class)? 
-//																		getMappedTypeName(annotationInfo, types.get(0)): 
-//																		types.get(0),
-//																  fieldIsAnnotedWith(field, JSONMapped.class)? 
-//																		getMappedTypeName(annotationInfo, types.get(1)): 
-//																		types.get(1)};
-						
-						
-//										of
-//										.addStatement("newJsonObect.$L( ($L)$T.invokeGetterMethod($L, $L).stream().map(e -> {")
-//										
-//										
-//										
-//										.addStatement(types.get(0)=".of("+fieldName+")}).collect($T.toList()) )",  
-//													setterName,
-//										   		  	fieldClass,
-//										   		  	ReflectionUtil.class, 
-//										   		  	incomingObjectName,
-//										   		  	localFieldName,
-//										   		  	Collectors.class)
-						
-						
-//										.endControlFlow()
-//										.beginControlFlow("catch($T eIllArg)", IllegalArgumentException.class)
-//										.addStatement("eIllArg.printStackTrace()")
-//										.endControlFlow();
+					
+					generateMappingStatementForMapForOf(methods, 
+														incomingObjectName, 
+														of,
+														fieldClass, 
+														fieldName,
+														setterName,
+														localFieldName,
+														sourceTypeArguments, 
+														destinationTypeArguments);
+
 					
 				} else { // typeArguments present but not mapped
 					of
-					.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
+					.addStatement("newJsonObject.$L(($L)$T.invokeGetterMethod($L, $L))",  
 									  setterName,
 							   		  fieldClass,
 							   		  ReflectionUtil.class, 
@@ -546,7 +550,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				}									
 			} else {
 				of
-				.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
+				.addStatement("newJsonObject.$L(($L)$T.invokeGetterMethod($L, $L))",  
 								  setterName,
 						   		  fieldClass,
 						   		  ReflectionUtil.class, 
@@ -555,7 +559,7 @@ public class JSONClassGenerator implements ClassGenerator {
 			}
 		} else {
 			of
-			.addStatement("newJsonObect.$L(($L)$T.invokeGetterMethod($L, $L))",  
+			.addStatement("newJsonObject.$L(($L)$T.invokeGetterMethod($L, $L))",  
 							  setterName,
 					   		  fieldClass,
 					   		  ReflectionUtil.class, 
@@ -576,17 +580,84 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param typeArguments
 	 * @param types
 	 */
-	private void generateMappingStatementOf(List<MethodSpec> methods, String incomingObjectName, MethodSpec.Builder of,
+	private void generateMappingStatementForCollectionForOf(Map<String, MethodSpec> methods, String incomingObjectName, MethodSpec.Builder of,
 			TypeName fieldClass, String fieldName, String setterName, String localFieldName,
 			List<TypeName> typeArguments, List<TypeName> types) {
-		String methodName = createListeElementMappingOf(methods, fieldName, typeArguments, types);
+		String methodName = createTypeElementMappingsOf(methods, typeArguments, types).get(typeArguments.get(0));
 		of										
-		.addStatement("newJsonObect.$L((($L)$T.invokeGetterMethod($L, $L)).stream().map(e -> $L(e)).collect($T.toList()))",
+		.addStatement("newJsonObject.$L((($L)$T.invokeGetterMethod($L, $L)).stream().map(e -> $L(e)).collect($T.toList()))",
 													 setterName,
 										   		  	 fieldClass,
 										   		  	 ReflectionUtil.class, 
 										   		  	 incomingObjectName,
 										   		  	 localFieldName,
+										   		  	 methodName,
+										   		  	 Collectors.class);
+	}
+	
+	/**
+	 * @param methods
+	 * @param incomingObjectName
+	 * @param of
+	 * @param fieldClass
+	 * @param fieldName
+	 * @param setterName
+	 * @param localFieldName
+	 * @param typeArguments
+	 * @param types
+	 */
+	private void generateMappingStatementForMapForOf(Map<String, MethodSpec> methods, String incomingObjectName, MethodSpec.Builder of,
+			TypeName fieldClass, String fieldName, String setterName, String localFieldName,
+			List<TypeName> sourceTypeArguments, List<TypeName> destinationTypeArguments) {
+
+		Map<TypeName, String> methodNames = createTypeElementMappingsOf(methods, sourceTypeArguments, destinationTypeArguments);
+		
+		String[] statements = new String[2];
+		if (methodNames.containsKey(sourceTypeArguments.get(0))) {
+			statements[0] = "e -> "+methodNames.get(sourceTypeArguments.get(0))+"(e.getKey())";
+		} else {
+			statements[0] = "e -> e.getKey()";
+		}
+		if (methodNames.containsKey(sourceTypeArguments.get(1))) {
+			statements[1] = "e -> "+methodNames.get(sourceTypeArguments.get(1))+"(e.getValue())";
+		} else {
+			statements[1] = "e -> e.getValue()";
+		}
+		
+		of			
+		.addStatement("newJsonObject.$L((($L)$T.invokeGetterMethod($L, $L)).entrySet().stream().collect($T.toMap($L,$L)))",
+													 setterName,
+													 fieldClass,
+													 ReflectionUtil.class,
+													 incomingObjectName,										   		  	 
+													 localFieldName,
+										   		  	 Collectors.class,
+										   		  	 statements[0],
+										   		  	 statements[1]);
+	}
+
+	/**
+	 * @param methods
+	 * @param incomingObjectName
+	 * @param of
+	 * @param fieldClass
+	 * @param fieldName
+	 * @param setterName
+	 * @param localFieldName
+	 * @param sourceTypeArguments
+	 * @param destinationTypeArguments
+	 */
+	private void generateMappingStatementForCollectionForOfWithArguments(final Map<String, MethodSpec> methods, 
+															final MethodSpec.Builder of,
+															String fieldName, 
+															String setterName, 
+															final List<TypeName> sourceTypeArguments, 
+															final List<TypeName> destinationTypeArguments) {
+		String methodName = createTypeElementMappingsOf(methods, sourceTypeArguments, destinationTypeArguments).get(sourceTypeArguments.get(0));
+		of			
+		.addStatement("newJsonObject.$L($L.stream().map(e -> $L(e)).collect($T.toList()))",
+													 setterName,
+													 fieldName,
 										   		  	 methodName,
 										   		  	 Collectors.class);
 	}
@@ -599,70 +670,94 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param fieldName
 	 * @param setterName
 	 * @param localFieldName
-	 * @param typeArguments
-	 * @param types
+	 * @param sourceTypeArguments
+	 * @param destinationTypeArguments
 	 */
-	private void generateMappingStatementForOfWithArguments(final List<MethodSpec> methods, 
-															String incomingObjectName, 
-															final MethodSpec.Builder of,
-															final TypeName fieldClass, 
-															String fieldName, 
-															String setterName, 
-															String localFieldName,
-			List<TypeName> typeArguments, List<TypeName> types) {
-		String methodName = createListeElementMappingOf(methods, fieldName, typeArguments, types);
-		of			
-		.addStatement("newJsonObect.$L($L.stream().map(e -> $L(e)).collect($T.toList()))",
-													 setterName,
-													 fieldName,
-										   		  	 methodName,
-										   		  	 Collectors.class);
-	}
-
-	
-	/**
-	 * create separate method to avoid try/catch within stream processing
-	 * 
-	 * @param methods
-	 * @param fieldName
-	 * @param typeArguments
-	 * @param types
-	 * @return
-	 */
-	private String createListeElementMappingOf(final List<MethodSpec> methods,
-											   String fieldName,
-											   final List<TypeName> typeArguments, 
-											   final List<TypeName> types) {
-		String methodName = "map"+StringUtil.capitalise(fieldName)+"To"+(
-				((ClassName)types.get(0)).simpleName());
-		MethodSpec.Builder mapMethodBuilder = MethodSpec.methodBuilder(methodName)
-				.addJavadoc(CodeBlock
-					    .builder()
-					    .add("Method to map field $L into instance of a generated class.\n", fieldName)
-					    .add("@param methods - List of methods to be created\n")
-					    .add("@param fieldName - Name of the field of which the content is to be mapped.\n")
-					    .add("@param typeArguments - {@code TypeMirror}s of the arguments of the field to be mapped.\n")
-					    .add("@param typeArguments - {@code TypeName}s of the arguments of the field to be mapped.\n")
-					    .add("@return name of the method to be generated.\n")
-					    .build())
-				.addModifiers(Modifier.PRIVATE, Modifier.STATIC);
+	private void generateMappingStatementForMapForOfWithArguments(final Map<String, MethodSpec> methods, 
+																final MethodSpec.Builder of,
+																String fieldName, 
+																String setterName, 
+																final List<TypeName> sourceTypeArguments, 
+																final List<TypeName> destinationTypeArguments) {
+		Map<TypeName, String> methodNames = createTypeElementMappingsOf(methods, sourceTypeArguments, destinationTypeArguments);
 		
-				mapMethodBuilder.addParameter(typeArguments.get(0), "e", Modifier.FINAL);
-								
-				mapMethodBuilder
-					.returns(types.get(0))
-					.addStatement("$T result = null", types.get(0))
-					.beginControlFlow("try")
-						.addStatement("result = $T.of(e)", types.get(0))
-					.endControlFlow()
-					.beginControlFlow("catch($T eIllAcc)", IllegalAccessException.class)
-						.addStatement("eIllAcc.printStackTrace()")
-					.endControlFlow()
-					.addStatement("return result");
-				MethodSpec mapMethod = mapMethodBuilder.build();
-		if (! methods.contains(mapMethod))
-				methods.add(mapMethod);
-		return methodName;
+		String[] statements = new String[2];
+		if (methodNames.containsKey(sourceTypeArguments.get(0))) {
+			statements[0] = "e -> "+methodNames.get(sourceTypeArguments.get(0))+"(e.getKey())";
+		} else {
+			statements[0] = "e -> e.getKey()";
+		}
+		if (methodNames.containsKey(sourceTypeArguments.get(1))) {
+			statements[1] = "e -> "+methodNames.get(sourceTypeArguments.get(1))+"(e.getValue())";
+		} else {
+			statements[1] = "e -> e.getValue()";
+		}
+		
+		of			
+		.addStatement("newJsonObject.$L($L.entrySet().stream().collect($T.toMap($L,$L)))",
+													 setterName,
+													 fieldName,										   		  	 
+										   		  	 Collectors.class,
+										   		  	 statements[0],
+										   		  	 statements[1]);
+	}
+	
+	
+	
+	/**
+	 * create separate method to avoid try/catch within stream processing
+	 * 
+	 * @param methods
+	 * @param fieldName
+	 * @param sourceTypeArguments
+	 * @param destinationTypeArguments
+	 * @return
+	 */
+	private Map<TypeName, String> createTypeElementMappingsOf(final Map<String, MethodSpec> methods,
+											   final List<TypeName> sourceTypeArguments, 
+											   final List<TypeName> destinationTypeArguments) {
+		
+		Map<TypeName, String> methodNames = new HashMap<>();
+		for (int typeIndex = 0; typeIndex < sourceTypeArguments.size(); typeIndex++) {
+			
+//			TypeMirror argumentType = getElementUtils().   (sourceTypeArguments.get(typeIndex));
+			TypeElement argumentElement =  getElementUtils().getTypeElement(sourceTypeArguments.get(typeIndex).toString());			
+			if (typeIsAnnotatedWith(JSONMapped.class, argumentElement)) {
+			
+				String methodName = "map"+StringUtil.capitalise(((ClassName)sourceTypeArguments.get(typeIndex)).simpleName())+"To"+(
+						((ClassName)destinationTypeArguments.get(typeIndex)).simpleName());
+				methodNames.put(sourceTypeArguments.get(typeIndex), methodName);
+				if (! methods.containsKey(methodName)) {
+					MethodSpec.Builder mapMethodBuilder = MethodSpec.methodBuilder(methodName)
+						.addJavadoc(CodeBlock
+							    .builder()
+							    .add("Method to map an instance of $L into instance of a generated class $L.\n", ((ClassName)sourceTypeArguments.get(typeIndex)).simpleName(),
+							    																				 ((ClassName)destinationTypeArguments.get(typeIndex)).simpleName())
+							    .add("@param methods - List of methods to be created\n")
+							    .add("@param typeArguments - {@code TypeMirror}s of the arguments of the field to be mapped.\n")
+							    .add("@param typeArguments - {@code TypeName}s of the arguments of the field to be mapped.\n")
+							    .add("@return name of the method to be generated.\n")
+							    .build())
+						.addModifiers(Modifier.PRIVATE, Modifier.STATIC);
+				
+						mapMethodBuilder.addParameter(sourceTypeArguments.get(typeIndex), "e", Modifier.FINAL);
+										
+						mapMethodBuilder
+							.returns(destinationTypeArguments.get(typeIndex))
+							.addStatement("$T result = null", destinationTypeArguments.get(typeIndex))
+							.beginControlFlow("try")
+								.addStatement("result = $T.of(e)", destinationTypeArguments.get(typeIndex))
+							.endControlFlow()
+							.beginControlFlow("catch($T eIllAcc)", IllegalAccessException.class)
+								.addStatement("eIllAcc.printStackTrace()")
+							.endControlFlow()
+							.addStatement("return result");
+						MethodSpec mapMethod = mapMethodBuilder.build();
+						methods.put(methodName, mapMethod);
+				}
+			} 
+		}
+		return methodNames;
 	}
 	
 	
@@ -672,41 +767,55 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * 
 	 * @param methods
 	 * @param fieldName
-	 * @param typeArguments
-	 * @param types
+	 * @param destinationTypeArguments
+	 * @param sourceTypeArguments
 	 * @return
 	 */
-	private String createListeElementMappingTo(final List<MethodSpec> methods, 
-											   String fieldName,
-											   final List<TypeName> typeArguments, 
-											   final List<TypeName> types) {
-		String methodName = "map"+StringUtil.capitalise(fieldName)+"To"+(
-				((ClassName)types.get(0)).simpleName());
-		MethodSpec mapMethod = MethodSpec.methodBuilder(methodName)
-				.addJavadoc(CodeBlock
-					    .builder()
-					    .add("Method to map field $L back into instance of the annotated class.\n", fieldName)
-					    .add("@param methods - List of methods to be created\n")
-					    .add("@param fieldName - Name of the field of which the content is to be mapped.\n")
-					    .add("@param typeArguments - {@code TypeMirror}s of the arguments of the field to be mapped.\n")
-					    .add("@param typeArguments - {@code TypeName}s of the arguments of the field to be mapped.\n")
-					    .add("@return name of the method to be generated.\n")
-					    .build())
-				.addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-				.addParameter(types.get(0), "e", Modifier.FINAL)
-				.returns(typeArguments.get(0))
-				.addStatement("$T result = null", typeArguments.get(0))
-				.beginControlFlow("try")
-					.addStatement("result = e.to()")
-				.endControlFlow()
-				.beginControlFlow("catch($T eIllAcc)", IllegalAccessException.class)
-					.addStatement("eIllAcc.printStackTrace()")
-				.endControlFlow()
-				.addStatement("return result")
-				.build();
-		if (! methods.contains(mapMethod))
-				methods.add(mapMethod);
-		return methodName;
+	private Map<TypeName, String> createTypeElementMappingTo(final Map<String, MethodSpec> methods, 
+													 final List<TypeName> sourceTypeArguments,
+													 final List<TypeName> destinationTypeArguments, 
+													 Element[] argumentElement) {
+		Map<TypeName, String> methodNames = new HashMap<>();
+		
+		for (int typeIndex = 0; typeIndex < sourceTypeArguments.size(); typeIndex++) {
+			
+			TypeElement argElement = (TypeElement) argumentElement[typeIndex];
+			if (typeIsAnnotatedWith(JSONMapped.class, argElement)) {
+			
+				String methodName = "map"+StringUtil.capitalise(((ClassName) sourceTypeArguments.get(typeIndex)).simpleName())+"To"+(
+						((ClassName)destinationTypeArguments.get(typeIndex)).simpleName());
+				
+				methodNames.put(sourceTypeArguments.get(typeIndex), methodName);
+				
+				if (! methods.containsKey(methodName)) {
+					MethodSpec mapMethod = MethodSpec.methodBuilder(methodName)
+						.addJavadoc(CodeBlock
+							    .builder()
+							    .add("Method to map an instance of $L back into an instance of the annotated class $L.\n", ((ClassName) sourceTypeArguments.get(typeIndex)).simpleName(),
+							    																						   ((ClassName) destinationTypeArguments.get(typeIndex)).simpleName())
+							    .add("@param methods - List of methods to be created\n")
+							    .add("@param typeArguments - {@code TypeMirror}s of the arguments of the field to be mapped.\n")
+							    .add("@param typeArguments - {@code TypeName}s of the arguments of the field to be mapped.\n")
+							    .add("@return name of the method to be generated.\n")
+							    .build())
+						.addModifiers(Modifier.PRIVATE, Modifier.STATIC)
+						.addParameter(sourceTypeArguments.get(typeIndex), "e", Modifier.FINAL)
+						.returns(destinationTypeArguments.get(typeIndex))
+						.addStatement("$T result = null", destinationTypeArguments.get(typeIndex))
+						.beginControlFlow("try")
+							.addStatement("result = e.to()")
+						.endControlFlow()
+						.beginControlFlow("catch($T eIllAcc)", IllegalAccessException.class)
+							.addStatement("eIllAcc.printStackTrace()")
+						.endControlFlow()
+						.addStatement("return result")
+						.build();
+				
+						methods.put(methodName, mapMethod);
+				}
+			}
+		}
+		return methodNames;
 	}
 
 	/**
@@ -729,7 +838,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param annotationInfo
 	 * @param methods
 	 */
-	private void createTo(String packageName, String className, ElementInfo annotationInfo, List<MethodSpec> methods) {
+	private void createTo(String packageName, String className, ElementInfo annotationInfo, Map<String, MethodSpec> methods) {
 		// create of method
 		final String objectName = StringUtil.uncapitalise(className);
 		final ClassName externalClass = ClassName.get(packageName, className);
@@ -793,7 +902,7 @@ public class JSONClassGenerator implements ClassGenerator {
 							getTypeUtils().erasure(fieldType), 
 							getTypeUtils().erasure(setType)))) {
 						
-						generateListTypeMappingStatementTo(methods,
+						generateListTypeMappingStatementForCollectionForTo(methods,
 														   objectName, 
 														   to,
 														   fieldClass, 
@@ -801,7 +910,24 @@ public class JSONClassGenerator implements ClassGenerator {
 														   localFieldName,
 														   typeArguments, 
 														   types, 
-														   fieldIsMapped); 
+														   fieldIsMapped,
+														   argumentElement); 
+					} else if (argumentElement.length > 1 && (argumentIsMapped[0] || argumentIsMapped[1]) &&
+							fieldType != null && getTypeUtils().isAssignable(
+									getTypeUtils().erasure(fieldType), 
+									getTypeUtils().erasure(mapType ))) {
+		
+		
+							generateMappingStatementForMapForTo(methods, 
+											objectName, 
+											to,
+											fieldClass, 
+											fieldName,
+											localFieldName,
+											types, 
+											typeArguments,
+											argumentElement);
+							
 					} else {
 						createStatementForUnmappedFieldTo(objectName, to, fieldIsMapped, fieldName, localFieldName);
 					}
@@ -815,7 +941,7 @@ public class JSONClassGenerator implements ClassGenerator {
 			to.endControlFlow();
 		});
 		to.addStatement("return $L", objectName).returns(ClassName.get(packageName, className));
-		methods.add(to.build());
+		methods.put("to", to.build());
 	}
 
 	
@@ -831,7 +957,7 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @param typeArguments
 	 * @param types
 	 */
-	private void generateListTypeMappingStatementTo(final List<MethodSpec> methods, 
+	private void generateListTypeMappingStatementForCollectionForTo(final Map<String, MethodSpec> methods, 
 											String objectName, 
 											MethodSpec.Builder to,
 											final TypeName destinationFieldClass, 
@@ -839,9 +965,10 @@ public class JSONClassGenerator implements ClassGenerator {
 											String localFieldName,
 											final List<TypeName> destinationTypes, 
 											final List<TypeName> sourceTypes, 
-											boolean fieldIsMapped) {
+											boolean fieldIsMapped, 
+											Element[] argumentElement) {
 		
-		String methodName = createListeElementMappingTo(methods, classFieldName, destinationTypes, sourceTypes);
+		String methodName = createTypeElementMappingTo(methods, sourceTypes, destinationTypes, argumentElement).get(sourceTypes.get(0));
 //		int i=0;
 		to.addStatement("$T.invokeSetterMethod($L, $L, $L.stream().map(e -> $L(e)).collect($T.toList()))",
 					ReflectionUtil.class, 
@@ -851,6 +978,55 @@ public class JSONClassGenerator implements ClassGenerator {
 					methodName,
 					Collectors.class);
 	}	
+	
+	
+	/**
+	 * @param methods
+	 * @param incomingObjectName
+	 * @param of
+	 * @param fieldClass
+	 * @param fieldName
+	 * @param setterName
+	 * @param localFieldName
+	 * @param typeArguments
+	 * @param types
+	 */
+	private void generateMappingStatementForMapForTo(final Map<String, MethodSpec> methods, 
+													 String incomingObjectName, 
+													 final MethodSpec.Builder of,
+													 final TypeName fieldClass, 
+													 String fieldName, 
+													 String localFieldName,
+													 final List<TypeName> sourceTypeArguments, 
+													 final List<TypeName> destinationTypeArguments,
+													 Element[] argumentElement) {
+
+		Map<TypeName, String> methodNames = createTypeElementMappingTo(methods, sourceTypeArguments, destinationTypeArguments, argumentElement);
+		
+		String[] statements = new String[2];
+		if (methodNames.containsKey(sourceTypeArguments.get(0))) {
+			statements[0] = "e -> "+methodNames.get(sourceTypeArguments.get(0))+"(e.getKey())";
+		} else {
+			statements[0] = "e -> e.getKey()";
+		}
+		if (methodNames.containsKey(sourceTypeArguments.get(1))) {
+			statements[1] = "e -> "+methodNames.get(sourceTypeArguments.get(1))+"(e.getValue())";
+		} else {
+			statements[1] = "e -> e.getValue()";
+		}
+		
+		of			
+		.addStatement("$T.invokeSetterMethod($L, $L, $L.entrySet().stream().collect($T.toMap($L,$L)))",
+													ReflectionUtil.class,
+													incomingObjectName,
+													localFieldName,
+													fieldName,
+													Collectors.class,
+										   		  	statements[0],
+										   		  	statements[1]);
+		
+	}
+	
 	/**
 	 * @param objectName
 	 * @param to
