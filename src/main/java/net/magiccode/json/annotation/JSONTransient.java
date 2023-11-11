@@ -11,7 +11,10 @@ import java.lang.annotation.Target;
 @Documented
 @Target({FIELD})
 /**
- * 
+ * For classes having a {@code @JSONMapped} annotation, 
+ * this marker annotation indicates that the annotated
+ * field must be annotated with {@code @JsonIgnore} in the 
+ * generated class
  */
 public @interface JSONTransient {
 

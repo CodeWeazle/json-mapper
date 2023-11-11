@@ -62,6 +62,7 @@ import net.magiccode.json.util.StringUtil;
 public class JSONClassGenerator implements ClassGenerator {
 
 	Map<ClassName, List<ElementInfo>> input;
+	
 	Filer filer;
 	Messager messager;
 	ProcessingEnvironment procEnv;
@@ -248,9 +249,10 @@ public class JSONClassGenerator implements ClassGenerator {
 	/**
 	 * generate toString method
 	 * 
-	 * @param methods - list of methods to be creatd.
+	 * @param methods - Map containing the methods to be created. Key is the name of the method, value a MethodSpec instance
+	 * 		
 	 */
-	private void createToJSONString(Map<String, MethodSpec> methods) {
+	private void createToJSONString(final Map<String, MethodSpec> methods) {
 		// create toJSONString method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toJSONString").addModifiers(Modifier.PUBLIC)
 				.addJavadoc(CodeBlock.builder().add("provides a formatted JSON string with all fields\n")
@@ -271,16 +273,15 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * @see AllArgsConstructor * generates an <i>of</i>-method with all fields as
 	 *      arguments. Acts basically like an
 	 * 
-	 * @param packageName
-	 * @param className
-	 * @param annotationInfo
-	 * @param methods
+	 * @param packageName - name of the package of the class which is being create by this method belongs to.
+	 * @param className - name of the class which is being create by this method belongs to.
+	 * @param annotationInfo - {@code ElementInfo} instance of the annotated class
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
 	 */
 	private void createOfWithArguments(String packageName, String className, ElementInfo annotationInfo,
 			Map<String, MethodSpec> methods) {
+
 		// create of method
-//		String incomingObjectName = "incoming"+className;
-		
 		MethodSpec.Builder of = MethodSpec.methodBuilder("of").addModifiers(Modifier.PUBLIC, Modifier.STATIC)
 				.addStatement(className + " newJsonObject = new " + className + "();")
 				.addException(IllegalAccessException.class)
@@ -288,12 +289,10 @@ public class JSONClassGenerator implements ClassGenerator {
 						.add("Creates object with all given values, acts basically as a AllArgsConstructor.\n")
 						.build());
 
-//		AtomicInteger fieldCount = new AtomicInteger(0);
 		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
 
 			TypeMirror fieldType = field.asType();
 			String fieldName = field.getSimpleName().toString();
-//			String localFieldName = "field"+fieldCount.getAndIncrement();
 			TypeName fieldClass = TypeName.get(fieldType);
 			of.addParameter(fieldClass, field.getSimpleName().toString(), new Modifier[0]);
 
@@ -330,12 +329,12 @@ public class JSONClassGenerator implements ClassGenerator {
 																					 fieldName, 
 																					 setterName, 
 																					 typeArguments, types);
+						// Maps
 						} else if (argumentElement.length > 1 && 
 								  (argumentIsMapped[0] || argumentIsMapped[1]) &&
 								  fieldType != null && getTypeUtils().isAssignable(
 										getTypeUtils().erasure(fieldType), 
-										getTypeUtils().erasure(mapType ))) {
-//!!! Maps							
+										getTypeUtils().erasure(mapType ))) {							
 							 generateMappingStatementForMapForOfWithArguments(methods, 
 																			  of,
 																			  fieldName, 
@@ -372,11 +371,11 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * generates an <i>of</i>-method which takes the annotated class as an argument
 	 * and returns an instance of the generated class with copies of all fields
 	 * 
-	 * @param incomingObjectClass
-	 * @param packageName
-	 * @param className
-	 * @param annotationInfo
-	 * @param methods
+	 * @param incomingObjectClass - {@code ClassName} object of the {@code @JSONMapped} annotated classe.
+	 * @param packageName - name of the package of the class which is being create by this method belongs to.
+	 * @param className - name of the class which is being create by this method belongs to.
+	 * @param annotationInfo - {@code ElementInfo} instance of the annotated class
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
 	 */
 	private void createOfWithClass(ClassName incomingObjectClass, String packageName, String className, ElementInfo annotationInfo, Map<String, MethodSpec> methods) {
 		// create of method
@@ -432,19 +431,27 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
-	 * @param className
-	 * @param annotationInfo
-	 * @param incomingObjectName
-	 * @param of
-	 * @param field
-	 * @param fieldClass
-	 * @param fieldName
-	 * @param setterName
-	 * @param localFieldName
+	 * Generate mapping statement for a field of a class that does NOT have a {@code @JSONMapped} annotation. 
+	 * 
+	 * @param incomingObjectClass - {@code ClassName} object of the {@code @JSONMapped} annotated classe.
+	 * @param annotationInfo - {@code ElementInfo} instance containing information about the {@code @JSONMapped} annotation
+	 * @param incomingObjectName - name of the object which is provided to the method to which the statement is to be added to
+	 * @param of - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param field - the {@code VariableElement} of the field.
+ 	 * @param fieldClass - {@code TypeName} of the field to be processed
+	 * @param fieldName - name of the field to be processed
+	 * @param setterName - name of the setter method to be called in the statement
+	 * @param localFieldName - generated name of the {@code Field} of the 'incoming' class
 	 */
-	private void createStatementForUnmappedFieldOf(ClassName incomingObjectClass, ElementInfo annotationInfo, String incomingObjectName,
-			MethodSpec.Builder of, VariableElement field, TypeName fieldClass, String fieldName, String setterName,
-			String localFieldName) {
+	private void createStatementForUnmappedFieldOf(final ClassName incomingObjectClass, 
+												   final ElementInfo annotationInfo, 
+												   String incomingObjectName,
+												   final MethodSpec.Builder of, 
+												   final VariableElement field, 
+												   final TypeName fieldClass, 
+												   String fieldName, 
+												   String setterName,
+												   String localFieldName) {
 		TypeMirror fieldTypeMirror = field.asType();
 		Element fieldElement = typeUtils.asElement(fieldTypeMirror);
 		if (fieldElement instanceof TypeElement) {
@@ -456,7 +463,6 @@ public class JSONClassGenerator implements ClassGenerator {
 					  												 localFieldName,
 					  												 ReflectionUtil.class,
 					  												 incomingObjectClass,
-//					  												 className+".class", 
 					  												 fieldName)
 
 			  .beginControlFlow("if ($L != null)" , localFieldName)
@@ -472,21 +478,34 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
-	 * @param className
-	 * @param annotationInfo
-	 * @param methods
-	 * @param incomingObjectName
-	 * @param of
-	 * @param needsSuppressWarnings
-	 * @param fieldType
-	 * @param fieldClass
-	 * @param fieldName
-	 * @param setterName
-	 * @param localFieldName
+	 * Generate a statement to map a field of a class annotated with {@code @JSONMapped}. This need to generate code
+	 * to map the annotated class field into it's mapped class. Since we do not know wheter or not the annotated class
+	 * uses fluent accessors, the generated code needs to call the setter method indirectly using reflection. 
+	 * This way, we do not have to care about its name.
+	 * 
+	 * @param incomingObjectClass - {@code ClassName} object of the {@code @JSONMapped} annotated classe.
+	 * @param annotationInfo - {@code ElementInfo} instance containing information about the {@code @JSONMapped} annotation
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param incomingObjectName - name of the object which is provided to the method to which the statement is to be added to
+	 * @param of - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param needsSuppressWarnings - flag indicating whether or not a {@code @SuppressWarnings} annotation needs to be generated.
+	 * @param fieldType - {@code TypeMirror} type of the field.
+ 	 * @param fieldClass - {@code TypeName} of the field to be processed
+	 * @param fieldName - name of the field to be processed
+	 * @param setterName - name of the setter method to be called in the statement
+	 * @param localFieldName - generated name of the {@code Field} of the 'incoming' class
 	 */
-	private void createStatementForMappedFieldOf(ClassName incomingObjectClass, ElementInfo annotationInfo, Map<String, MethodSpec> methods,
-			String incomingObjectName, MethodSpec.Builder of, AtomicBoolean needsSuppressWarnings, TypeMirror fieldType,
-			TypeName fieldClass, String fieldName, String setterName, String localFieldName) {
+	private void createStatementForMappedFieldOf(final ClassName incomingObjectClass, 
+												 final ElementInfo annotationInfo, 
+												 final Map<String, MethodSpec> methods,
+												 String incomingObjectName, 
+												 final MethodSpec.Builder of, 
+												 AtomicBoolean needsSuppressWarnings, 
+												 final TypeMirror fieldType,
+												 final TypeName fieldClass, 
+												 String fieldName, 
+												 String setterName, 
+												 String localFieldName) {
 		of
 		.addStatement("$T $L = $T.deepGetField($T.class, $S, true)", Field.class,
 																localFieldName,
@@ -570,20 +589,29 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
-	 * @param methods
-	 * @param incomingObjectName
-	 * @param of
-	 * @param fieldClass
-	 * @param fieldName
-	 * @param setterName
-	 * @param localFieldName
-	 * @param typeArguments
-	 * @param types
+	 * Generate a statement to map a {@code java.util.Collection} with type arguments which are mapped with {@code @JSONMapped}
+	 * for the of() method using the annotated class for initialisation.
+	 *   
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param incomingObjectName - name of the object which is provided to the method to which the statement is to be added to
+	 * @param of - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param fieldClass - {@code TypeName} of the field to be processed
+	 * @param fieldName - name of the field to be processed
+	 * @param setterName - name of the setter method to be called in the statement
+	 * @param localFieldName - generated name of the {@code Field} of the 'incoming' class
+	 * @param sourceTypeArguments - list of {@code TypeName} entries representing the 'incoming' argument types
+	 * @param destinationTypeArguments - list of {@code TypeName} entries representing the mapped argument types
 	 */
-	private void generateMappingStatementForCollectionForOf(Map<String, MethodSpec> methods, String incomingObjectName, MethodSpec.Builder of,
-			TypeName fieldClass, String fieldName, String setterName, String localFieldName,
-			List<TypeName> typeArguments, List<TypeName> types) {
-		String methodName = createTypeElementMappingsOf(methods, typeArguments, types).get(typeArguments.get(0));
+	private void generateMappingStatementForCollectionForOf(final Map<String, MethodSpec> methods, 
+															String incomingObjectName, 
+															final MethodSpec.Builder of,
+															final TypeName fieldClass, 
+															String fieldName, 
+															String setterName, 
+															String localFieldName,
+															final List<TypeName> sourceTypeArguments, 
+															final List<TypeName> destinationTypeArguments) {
+		String methodName = createTypeElementMappingsOf(methods, sourceTypeArguments, destinationTypeArguments).get(sourceTypeArguments.get(0));
 		of										
 		.addStatement("newJsonObject.$L((($L)$T.invokeGetterMethod($L, $L)).stream().map(e -> $L(e)).collect($T.toList()))",
 													 setterName,
@@ -596,19 +624,28 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 	
 	/**
-	 * @param methods
-	 * @param incomingObjectName
-	 * @param of
-	 * @param fieldClass
-	 * @param fieldName
-	 * @param setterName
-	 * @param localFieldName
-	 * @param typeArguments
-	 * @param types
+	 * Generate a statement to map a {@code java.util.Map} with type arguments which are mapped with {@code @JSONMapped}
+	 * for the of() method using the annotated class for initialisation.
+	 * 
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param incomingObjectName - name of the object which is provided to the method to which the statement is to be added to
+	 * @param of - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param fieldClass - {@code TypeName} of the field to be processed
+	 * @param fieldName - name of the field to be processed
+	 * @param setterName - name of the setter method to be called in the statement
+	 * @param localFieldName - generated name of the {@code Field} of the 'incoming' class
+	 * @param sourceTypeArguments - list of {@code TypeName} entries representing the 'incoming' argument types
+	 * @param destinationTypeArguments - list of {@code TypeName} entries representing the mapped argument types
 	 */
-	private void generateMappingStatementForMapForOf(Map<String, MethodSpec> methods, String incomingObjectName, MethodSpec.Builder of,
-			TypeName fieldClass, String fieldName, String setterName, String localFieldName,
-			List<TypeName> sourceTypeArguments, List<TypeName> destinationTypeArguments) {
+	private void generateMappingStatementForMapForOf(final Map<String, MethodSpec> methods, 
+													 String incomingObjectName, 
+													 final MethodSpec.Builder of,
+													 final TypeName fieldClass, 
+													 String fieldName, 
+													 String setterName, 
+													 String localFieldName,
+													 final List<TypeName> sourceTypeArguments, 
+													 final List<TypeName> destinationTypeArguments) {
 
 		Map<TypeName, String> methodNames = createTypeElementMappingsOf(methods, sourceTypeArguments, destinationTypeArguments);
 		
@@ -637,15 +674,15 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
-	 * @param methods
-	 * @param incomingObjectName
-	 * @param of
-	 * @param fieldClass
-	 * @param fieldName
-	 * @param setterName
-	 * @param localFieldName
-	 * @param sourceTypeArguments
-	 * @param destinationTypeArguments
+	 * Generate a statement to map a {@code java.util.Collection} with type arguments which are mapped with {@code @JSONMapped}
+	 * for the of() method using the annotated class for initialisation.
+	 *   
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param of - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param fieldName - name of the field to be processed
+	 * @param setterName - name of the setter method to be called in the statement
+	 * @param sourceTypeArguments - list of {@code TypeName} entries representing the 'incoming' argument types
+	 * @param destinationTypeArguments - list of {@code TypeName} entries representing the mapped argument types
 	 */
 	private void generateMappingStatementForCollectionForOfWithArguments(final Map<String, MethodSpec> methods, 
 															final MethodSpec.Builder of,
@@ -663,15 +700,15 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 
 	/**
-	 * @param methods
-	 * @param incomingObjectName
-	 * @param of
-	 * @param fieldClass
-	 * @param fieldName
-	 * @param setterName
-	 * @param localFieldName
-	 * @param sourceTypeArguments
-	 * @param destinationTypeArguments
+	 * Generate a statement to map a {@code java.util.Map} with type arguments which are mapped with {@code @JSONMapped}
+	 * for the of() method using arguments for initialisation.  
+	 *  
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param of - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param fieldName - name of the field to be processed
+	 * @param setterName - name of the setter method to be called in the statement
+	 * @param sourceTypeArguments - list of {@code TypeName} entries representing the 'incoming' argument types
+	 * @param destinationTypeArguments - list of {@code TypeName} entries representing the mapped argument types
 	 */
 	private void generateMappingStatementForMapForOfWithArguments(final Map<String, MethodSpec> methods, 
 																final MethodSpec.Builder of,
@@ -707,11 +744,10 @@ public class JSONClassGenerator implements ClassGenerator {
 	/**
 	 * create separate method to avoid try/catch within stream processing
 	 * 
-	 * @param methods
-	 * @param fieldName
-	 * @param sourceTypeArguments
-	 * @param destinationTypeArguments
-	 * @return
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param sourceTypeArguments - list of {@code TypeName} entries representing the '- {@code TypeName} of the field to be processed' argument types
+	 * @param destinationTypeArguments - list of {@code TypeName} entries representing the mapped argument types
+	 * @return map of method names for each {@code TypeName} that is actually mapped with {@code @JSONMapped}
 	 */
 	private Map<TypeName, String> createTypeElementMappingsOf(final Map<String, MethodSpec> methods,
 											   final List<TypeName> sourceTypeArguments, 
@@ -720,7 +756,6 @@ public class JSONClassGenerator implements ClassGenerator {
 		Map<TypeName, String> methodNames = new HashMap<>();
 		for (int typeIndex = 0; typeIndex < sourceTypeArguments.size(); typeIndex++) {
 			
-//			TypeMirror argumentType = getElementUtils().   (sourceTypeArguments.get(typeIndex));
 			TypeElement argumentElement =  getElementUtils().getTypeElement(sourceTypeArguments.get(typeIndex).toString());			
 			if (typeIsAnnotatedWith(JSONMapped.class, argumentElement)) {
 			
@@ -765,11 +800,11 @@ public class JSONClassGenerator implements ClassGenerator {
 	/**
 	 * create separate method to avoid try/catch within stream processing
 	 * 
-	 * @param methods
-	 * @param fieldName
-	 * @param destinationTypeArguments
-	 * @param sourceTypeArguments
-	 * @return
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param sourceTypeArguments - list of {@code TypeName} entries representing the 'incoming' argument types
+	 * @param destinationTypeArguments - list of {@code TypeName} entries representing the mapped argument types
+	 * @param argumentElement - array of Element types of the sourceTypeArguments
+	 * @return map of method names for each {@code TypeName} that is actually mapped with {@code @JSONMapped}
 	 */
 	private Map<TypeName, String> createTypeElementMappingTo(final Map<String, MethodSpec> methods, 
 													 final List<TypeName> sourceTypeArguments,
@@ -818,27 +853,31 @@ public class JSONClassGenerator implements ClassGenerator {
 		return methodNames;
 	}
 
-	/**
-	 * @param annotationInfo
-	 * @param fieldElementClass
-	 * @return
-	 */
-	private TypeName getMappedTypeName(final ElementInfo annotationInfo, ClassName fieldElementClass) {
-		String fcName = annotationInfo.prefix() + fieldElementClass.simpleName();
-		ClassName mappedFieldClassName = ClassName.get(generatePackageName(fieldElementClass, annotationInfo), fcName);
-		return mappedFieldClassName;
-	}
+//	/**
+//	 * return mapped field class name
+//	 * @param annotationInfo
+//	 * @param fieldElementClass
+//	 * @return mappedFieldClassName
+//	 */
+//	private TypeName getMappedTypeName(final ElementInfo annotationInfo, ClassName fieldElementClass) {
+//		String fcName = annotationInfo.prefix() + fieldElementClass.simpleName();
+//		ClassName mappedFieldClassName = ClassName.get(generatePackageName(fieldElementClass, annotationInfo), fcName);
+//		return mappedFieldClassName;
+//	}
 
 	/**
 	 * generates a <i>to</i>-method which returns an instance of the annotated class
 	 * with copies of all field values.
 	 * 
-	 * @param packageName
-	 * @param className
-	 * @param annotationInfo
-	 * @param methods
+	 * @param packageName - name of the package of the class which is being create by this method belongs to.
+	 * @param className - name of the class which is being create by this method belongs to.
+	 * @param annotationInfo - {@code ElementInfo} instance of the annotated class
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
 	 */
-	private void createTo(String packageName, String className, ElementInfo annotationInfo, Map<String, MethodSpec> methods) {
+	private void createTo(String packageName, 
+						  String className, 
+						  final ElementInfo annotationInfo, 
+						  final Map<String, MethodSpec> methods) {
 		// create of method
 		final String objectName = StringUtil.uncapitalise(className);
 		final ClassName externalClass = ClassName.get(packageName, className);
@@ -872,8 +911,6 @@ public class JSONClassGenerator implements ClassGenerator {
 			}
 			
 			
-			//------------------------------------
-			
 			if (fieldType.getKind() == TypeKind.DECLARED) {
 				List<TypeName> typeArguments = obtainTypeArguments(fieldType);							
 				List<TypeName> types = collectTypes(annotationInfo, typeArguments);
@@ -885,7 +922,6 @@ public class JSONClassGenerator implements ClassGenerator {
 					for (int i=0; i < typeArguments.size(); i++) {
 						argumentElement[i] = getElementUtils().getTypeElement(typeArguments.get(i).toString());
 						argumentIsMapped[i] = fieldIsAnnotedWith(argumentElement[i], JSONMapped.class);
-	//					needsSuppressWarnings.set(true);
 					}
 					
 					
@@ -947,15 +983,19 @@ public class JSONClassGenerator implements ClassGenerator {
 	
 	
 	/**
-	 * @param methods
-	 * @param incomingObjectName
-	 * @param of
-	 * @param fieldClass
-	 * @param fieldName
-	 * @param setterName
-	 * @param localFieldName
-	 * @param typeArguments
-	 * @param types
+	 * generate a mapping statement and method for the {@code JASONMapped} argument type fo a liset, used
+	 * in the to() method
+	 * 
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param objectName - name of the object which is provided to the method to which the statement is to be added to
+	 * @param to - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param destinationFieldClass - {@code TypeName} of the field to be processed
+	 * @param classFieldName - name of the field in the generated class for which the statement is being created.
+	 * @param localFieldName - generated name of the {@code Field} of the 'incoming' class
+	 * @param destinationTypes - list of {@code TypeName} entries representing the mapped argument types
+	 * @param sourceTypes - list of {@code TypeName} entries representing the 'incoming' argument types
+	 * @param fieldIsMapped - flag to indicate whether or not field has a class annotated with {@code @JSONMapped}
+	 * @param argumentElement - array of Element types of the sourceTypeArguments
 	 */
 	private void generateListTypeMappingStatementForCollectionForTo(final Map<String, MethodSpec> methods, 
 											String objectName, 
@@ -969,7 +1009,6 @@ public class JSONClassGenerator implements ClassGenerator {
 											Element[] argumentElement) {
 		
 		String methodName = createTypeElementMappingTo(methods, sourceTypes, destinationTypes, argumentElement).get(sourceTypes.get(0));
-//		int i=0;
 		to.addStatement("$T.invokeSetterMethod($L, $L, $L.stream().map(e -> $L(e)).collect($T.toList()))",
 					ReflectionUtil.class, 
 					objectName,
@@ -981,15 +1020,18 @@ public class JSONClassGenerator implements ClassGenerator {
 	
 	
 	/**
-	 * @param methods
-	 * @param incomingObjectName
-	 * @param of
-	 * @param fieldClass
-	 * @param fieldName
-	 * @param setterName
-	 * @param localFieldName
-	 * @param typeArguments
-	 * @param types
+	 * generate a mapping statement and method for the {@code JASONMapped} argument type fo a map, used
+	 * in the to() method
+	 * 
+	 * @param methods - {@code Map} of methods to be generated for the class which is being processed 
+	 * @param incomingObjectName - name of the object which is provided to the method to which the statement is to be added to
+	 * @param of - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param fieldClass - {@code TypeName} of the field to be processed
+	 * @param fieldName - name of the field in the generated class for which the statement is being created.
+	 * @param localFieldName - generated name of the {@code Field} of the 'incoming' class
+	 * @param sourceTypeArguments - list of {@code TypeName} entries representing the 'incoming' argument types
+	 * @param destinationTypeArguments - list of {@code TypeName} entries representing the mapped argument types
+	 * @param argumentElement - array of Element types of the sourceTypeArguments
 	 */
 	private void generateMappingStatementForMapForTo(final Map<String, MethodSpec> methods, 
 													 String incomingObjectName, 
@@ -1028,11 +1070,13 @@ public class JSONClassGenerator implements ClassGenerator {
 	}
 	
 	/**
-	 * @param objectName
-	 * @param to
-	 * @param fieldIsMapped
-	 * @param fieldName
-	 * @param localFieldName
+	 * Create a statement to map a field of a class which is not annotated with  {@code @JSONMapped}.  
+	 * 
+	 * @param objectName - name of the object which is provided to the method to which the statement is to be added to
+	 * @param to - {@code MethodSpec} instance of the method the created statement is to be added to
+	 * @param fieldIsMapped - indicates whether or not the given field is annotated  with {@code JSONMapped}.
+	 * @param fieldName - name of the field in the generated class for which the statement is being created.
+	 * @param localFieldName - generated name of the {@code Field} of the 'incoming' class
 	 */
 	private void createStatementForUnmappedFieldTo(final String objectName, 
 												   final MethodSpec.Builder to, 
@@ -1047,14 +1091,16 @@ public class JSONClassGenerator implements ClassGenerator {
 	 * create field
 	 * 
 	 * @param field         - VariableElement representation of field to be created
+	 * @param annotationInfo - {@code ElementInfo} instance containing information about the {@code @JSONMapped} annotation
 	 * @param fieldClass    - TypeName for class field shall be created in.
-	 * @param fieldIsMapped - indicates whether or not the given field is annotated
-	 *                      with {@code JSONMapped}.
+	 * @param fieldIsMapped - indicates whether or not the given field is annotated  with {@code JSONMapped}.
 	 * @return field specification for the create field.
 	 */
 	@Override
-	public FieldSpec createFieldSpec(VariableElement field, ElementInfo annotationInfo, TypeName fieldClass,
-			boolean fieldIsMapped) {
+	public FieldSpec createFieldSpec(final VariableElement field, 
+									 final ElementInfo annotationInfo, 
+									 final TypeName fieldClass,				
+									 boolean fieldIsMapped) {
 
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();

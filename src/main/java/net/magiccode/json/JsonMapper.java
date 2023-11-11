@@ -44,10 +44,22 @@ import net.magiccode.json.generator.JSONClassGenerator;
 @AutoService(Processor.class)
 public class JsonMapper extends MapperBase {
 
+	/**
+	 * supports the creation of new files.
+	 */
 	private Filer filer;
+	/**
+	 * messager instance allows to report errors and warnings.
+	 */
 	private Messager messager;
+	/**
+	 * The process environment
+	 */
 	private ProcessingEnvironment procEnv;
 
+	/**
+	 * hollow constructor
+	 */
 	public JsonMapper() {
 	}
 
@@ -83,10 +95,10 @@ public class JsonMapper extends MapperBase {
 	}
 
 	/**
-	 * process @JSONMapped annotation
-	 * 
-	 * @param roundEnv
-	 * @param result
+ 	 * process @JSONMapped annotation
+ 	 * 
+	 * @param roundEnv - The environment for this round
+	 * @param result - Map containing the generated information from the annotated {@code TypeElement}
 	 */
 	private void processJSONMapped(final RoundEnvironment roundEnv, final Map<ClassName, List<ElementInfo>> result) {
 		
@@ -114,8 +126,9 @@ public class JsonMapper extends MapperBase {
 	/**
 	 * collect class information for later generation
 	 * 
-	 * @param result
-	 * @param annotatedElement
+	 * @param result - Map containing the generated information from the annotated {@code TypeElement}
+	 * @param annotatedElement - The annotated {@code TypeElement}
+	 * @param jsonMapped - The {@code @JSONMapped} annotation
 	 */
 	private void generateClassInformation (final Map<ClassName, List<ElementInfo>> result,
 										  TypeElement annotatedElement,
@@ -199,16 +212,20 @@ public class JsonMapper extends MapperBase {
 	 * create ElementInfo object out of given JSONMapped information, extended by 
 	 * information about the environment like the fields of the annotated class.
 	 * 
-	 * @param jsonMapped
-	 * @param typeElement
-	 * @param className
-	 * @param fields
-	 * @param superClassElement
-	 * @param interfaces
-	 * @return
+	 * @param jsonMapped - The {@code @JSONMapped} annotation
+	 * @param typeElement - the annotated {@code TypeElement}
+	 * @param className {@code ClassName} instance of the class containing the{@code @JSONMapped} annotaton
+	 * @param fields - {@code VariableElement} representation of the fields of the annotated class
+	 * @param superClassElement - {@code TypeElement} of (an existing) class to be extended by every generated class
+	 * @param interfaces - {@code java.util.Map} containing all interfaces the generated classes are to implement.
+	 * @return an instance of the class {@code ElementInfo} containing all information from the annotation (or defaults), that are going to be used for the code generation. 
 	 */
-	private ElementInfo createElementInfo(JSONMapped jsonMapped, TypeElement typeElement, ClassName className,
-			List<VariableElement> fields, TypeElement superClassElement, final Map<String, TypeElement> interfaces) {
+	private ElementInfo createElementInfo(final JSONMapped jsonMapped, 
+										  final TypeElement typeElement, 
+										  final ClassName className,
+										  final List<VariableElement> fields, 
+										  final TypeElement superClassElement, 
+										  final Map<String, TypeElement> interfaces) {
 		
 		ElementInfoBuilder elementInfoBuiler = ElementInfo.builder().className(className.simpleName()) // the name of the class
 																										// containing the

@@ -13,6 +13,11 @@ import javax.lang.model.type.TypeMirror;
 import com.squareup.javapoet.ClassName;
 
 
+/**
+ * abstract superclass for class mappers.
+ * provides useful methods for the processing
+ * of the mapper annotations.
+ */
 public abstract class MapperBase extends AbstractProcessor {
 
 	public MapperBase() {

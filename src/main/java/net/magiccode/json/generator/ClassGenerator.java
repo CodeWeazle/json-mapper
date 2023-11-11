@@ -53,7 +53,7 @@ public interface ClassGenerator {
 	 * @param className - class name of the class to be created
 	 * @param packageName - the package the class to be created shall be located in.
 	 * @param fields - list of fields to be created
-	 * @param methods - list of methods to be created
+	 * @param methods - maps with MethodSpec definitions for methods to be created
 	 * @return typeSpec - object containing the newly generated class
 	 */
 	public TypeSpec generateClass(ElementInfo annotationInfo, 
@@ -66,7 +66,7 @@ public interface ClassGenerator {
 	/**
 	 * create no-args constructor
 	 * 
-	 * @param methods - list of methods to be created
+	 * @param methods - maps with MethodSpec definitions for methods to be created
 	 */
 	default void createNoArgsConstructor(Map<String, MethodSpec> methods) {
 		methods.put("_constructor", MethodSpec.constructorBuilder()
@@ -79,7 +79,8 @@ public interface ClassGenerator {
 	 * 
 	 * @param field - the VariableElement or the field the setter is to be created for. 
 	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
-	 * @return specification for setter method
+	 * @param fieldTypeName - {@code TypeName} of the class for the field for which the setter method is to be created.
+	 * @param methods - maps with MethodSpec definitions for methods to be created
 	 */
 	default void createSetterMethodSpec(VariableElement field, 
 											  ElementInfo annotationInfo,
@@ -175,16 +176,17 @@ public interface ClassGenerator {
 	}
 
 	/**
-	 * create getter method
-	 * 
-	 * @param field - the VariableElement or the field the setter is to be created for.
+ 	 * create getter method
+ 	 * 
+	 * @param field - the VariableElement or the field the setter is to be created for. 
 	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
-	 * @return specification for getter method
+	 * @param fieldTypeName - {@code TypeName} of the class for the field for which the getter method is to be created.
+	 * @param methods - maps with MethodSpec definitions for methods to be created
 	 */
-	default void createGetterMethodSpec(VariableElement field, 
-										  ElementInfo annotationInfo,
-										  TypeName fieldTypeName,
-										  final Map<String, MethodSpec> methods) {
+	default void createGetterMethodSpec(final VariableElement field, 
+										final ElementInfo annotationInfo,
+										final TypeName fieldTypeName,
+										final Map<String, MethodSpec> methods) {
 		// create getter method
 		String getterName = generateGetterName(annotationInfo, field.getSimpleName().toString(), fieldTypeName.toString().equals(Boolean.class.getName()));
 		String fieldName = field.getSimpleName().toString();
@@ -254,7 +256,7 @@ public interface ClassGenerator {
 	 * generate toString method
 	 * 
 	 * @param annotationInfo - information about the annotation arguments
-	 * @param methods - list of methods to be created
+	 * @param methods - maps with MethodSpec definitions for methods to be created
 	 */
 	default void createToString(ElementInfo annotationInfo, Map<String, MethodSpec> methods) {
 		// create toSTring method		

@@ -5,7 +5,6 @@
 	<groupId>net.magiccode.json</groupId>
 	<artifactId>json-mapper</artifactId>
 	<version>0.0.7</version>
-	<name>Json Mapper</name>
 	<description>Provides annotations for entity-json mapping dto generation</description>
 	<url>https://github.com/CodeWeazle/json-mapper</url>
 
