@@ -3,6 +3,7 @@ package net.magiccode.json.generator;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -1103,15 +1105,27 @@ public class JSONClassGenerator implements ClassGenerator {
 									 final TypeName fieldClass,				
 									 boolean fieldIsMapped) {
 
+		List<AnnotationSpec> annotations = new ArrayList<>();
+		
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
 		if (field.getAnnotation(JSONTransient.class) == null && field.getAnnotation(JsonIgnore.class) == null) {
+			// check for java.time.LocalDate or java.time.LocalDateTime
+			
+			if (fieldClass.equals(ClassName.get(LocalDateTime.class))) {
+				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.dateTimePattern())).build());				
+			}
+			if (fieldClass.equals(ClassName.get(LocalDate.class))) {
+				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.datePattern())).build());
+			}
+			
 			AnnotationSpec.Builder jsonPropertyAnnotationBuilder = AnnotationSpec.builder(JsonProperty.class).addMember(
 					"value", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
 			if (field.getAnnotation(JSONRequired.class) != null) {
 				jsonPropertyAnnotationBuilder.addMember("required", "true");
 			}
-			AnnotationSpec jsonPropertyAnnotation = jsonPropertyAnnotationBuilder.build();
+			annotations.add(jsonPropertyAnnotationBuilder.build());
+			
 			TypeMirror type = field.asType();
 
 			TypeName fieldType = fieldClass;
@@ -1126,13 +1140,16 @@ public class JSONClassGenerator implements ClassGenerator {
 			}
 			fieldType = checkFieldTypeForCollections(annotationInfo, type, fieldType);
 
-			fieldspec = FieldSpec.builder(fieldType, fieldName, Modifier.PRIVATE).addAnnotation(jsonPropertyAnnotation)
-					.build();
-
+			FieldSpec.Builder fieldSpecBuilder = FieldSpec.builder(fieldType, fieldName, Modifier.PRIVATE); 
+			annotations.stream().forEach(annotation -> {
+				fieldSpecBuilder.addAnnotation(annotation);
+			});
+			fieldspec = fieldSpecBuilder.build();
+			
 		} else {
-			fieldspec = FieldSpec.builder(fieldClass, fieldName, Modifier.PRIVATE).addAnnotation(JsonIgnore.class)
-					.build();
-
+			fieldspec = FieldSpec.builder(fieldClass, fieldName, Modifier.PRIVATE)
+								 .addAnnotation(JsonIgnore.class)
+								 .build();
 		}
 		return fieldspec;
 	}

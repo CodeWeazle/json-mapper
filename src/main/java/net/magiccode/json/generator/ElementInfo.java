@@ -99,6 +99,10 @@ public class ElementInfo {
 	// experimental
 	private boolean useLombok;
 	
+	private String datePattern;
+
+	private String dateTimePattern;
+	
 	
 	/**
 	 * add an interface specification from a ClassName.
@@ -117,6 +121,8 @@ public class ElementInfo {
 	public boolean hasInterface(ClassName className) {
 		return interfaces().stream().filter(intf-> intf.canonicalName().equals(className.canonicalName())).count()>0;
 	}
+
+	
 	
 	
 }

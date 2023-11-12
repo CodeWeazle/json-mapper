@@ -100,4 +100,20 @@ public @interface JSONMapped {
 	 * @return as set or true (default)
 	 */
 	boolean inheritFields() default true;
+	
+	/**
+	 * LocalDate fields are annotated with {@code @JsonFormat} in the generated class. This option allows to specify a custom format 
+	 * for a date pattern to customise the JSON output. Default pattern is "yyyy-MM-dd"
+	 * 
+	 * @return as set or true (default)
+	 */
+	String datePattern() default  "yyyy-MM-dd";
+
+	/**
+	 * LocalDateTime fields are annotated with {@code @JsonFormat} in the generated class. This option allows to specify a custom format 
+	 * for a date pattern to customise the JSON output. Default pattern is "yyyy-MM-dd HH:mm:ss" 
+	 */
+	String dateTimePattern() default  "yyyy-MM-dd HH:mm:ss";
+	
+	
 }
