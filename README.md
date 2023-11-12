@@ -184,9 +184,49 @@ To map the instance back into the original class, the *to()* method can should b
 
 Fields of classes which are annotated by @JSONMapped themselves will be mapped into the appropriate (generated) mapping class of this field. Mapping of values happens automatically.
 
+```
+@JSONMapped(fluentAccessors = false)
+public class Person {
+
+	private String firstName;
+	private String middleName;
+	private String surName; 
+	
+	Address address;	
+	Contact contact;
+	
+}
+```
+if *Address* and *Contact* are annotated with *@JSONMapped, the mapping class would be generated as follows:
+ 
+```
+@JSONMappedBy(
+        mappedClass = Person.class
+)
+@JsonInclude(JsonInclude.Include.ALWAYS)
+public class JSONPerson implements Serializable {
+    static final long serialVersionUID = -1L;
+
+    @JsonProperty("first_name")
+    private String firstName;
+
+    @JsonProperty("middle_name")
+    private String middleName;
+
+    @JsonProperty("sur_name")
+    private String surName;
+
+    @JsonProperty("address")
+    private JSONAddress address;
+
+    @JsonProperty("contact")
+    private JSONContact contact;
+```
+
+
 ### Collections/Sets/Maps with type arguments that are @JSONMapped
 
-All type arguments of Collections/Sets/Maps are mapped automatically into their mapping counterpart if these classes are annotated with @JSONMapped by themself.
+All type arguments of Collections/Sets/Maps are mapped automatically into their mapping counterpart if these classes are annotated with *@JSONMapped* by themself.
 
 Take an annotated class *Person* as an example:
 
@@ -238,9 +278,9 @@ public class JSONPerson implements Serializable {
     private List<JSONAddress> addresses;
 
     @JsonProperty("contacts")
-    private List<JSONContact> contac
+    private List<JSONContact> contacts;
 ```
-As it ca be seen, *Contacts* has been mapped by *JSONContact* and Address has been mapped by *JSONAddress*. The mapping of the contents of these types is handled by the code in the generated class
+As it can be seen, *Contacts* has been mapped by *JSONContact* and Address has been mapped by *JSONAddress*. The mapping of the contents of these types is handled by the code in the generated class
 when the *of()* or *to()* methods are being called.
 
 
