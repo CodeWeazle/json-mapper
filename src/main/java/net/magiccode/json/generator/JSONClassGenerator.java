@@ -258,6 +258,7 @@ public class JSONClassGenerator implements ClassGenerator {
 				.addJavadoc(CodeBlock.builder().add("provides a formatted JSON string with all fields\n")
 						.add("and their current values.\n").build())
 				.addStatement("$T mapper = new $T()", ObjectMapper.class, ObjectMapper.class)
+				.addStatement("mapper.findAndRegisterModules()")
 				.addStatement("String value = this.getClass().getName()").beginControlFlow("try")
 				.addStatement("value += mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this)")
 				.endControlFlow().beginControlFlow("catch ($T e)", JsonProcessingException.class)
