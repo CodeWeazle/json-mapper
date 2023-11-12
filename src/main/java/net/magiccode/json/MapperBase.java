@@ -13,12 +13,17 @@ import javax.lang.model.type.TypeMirror;
 import com.squareup.javapoet.ClassName;
 
 
+/**
+ * abstract superclass for class mappers.
+ * provides useful methods for the processing
+ * of the mapper annotations.
+ */
 public abstract class MapperBase extends AbstractProcessor {
 
 	public MapperBase() {
 	}
 	
-	protected ClassName getName(TypeMirror typeMirror) {
+	public static ClassName getName(TypeMirror typeMirror) {
 		if (typeMirror instanceof DeclaredType) {
 			if (((DeclaredType) typeMirror).asElement() instanceof TypeElement) {
 				return ClassName.get(getClass((TypeElement) ((DeclaredType) typeMirror).asElement()));
@@ -27,16 +32,26 @@ public abstract class MapperBase extends AbstractProcessor {
 		return null;
 	}
 	
-	protected static Class<?> getClass(TypeElement element) {
-        try {/*w w w .j  a va 2s .  c  om*/
+	/**
+	 * get the class represented by the given TypeElement
+	 * @param element the TypeElement to inspect
+	 * @return the class object for the TypeElement if available, else null
+	 */
+	public static Class<?> getClass(Element element) {
+        try {
             return Class.forName(getClassName(element));
         } catch (Exception e) {
-            //System.out.println(e);
+            System.out.println(e);
         }
         return null;
     }
 
-	protected static String getClassName(TypeElement element) {
+	/**
+	 * return class name including inner classes
+	 * @param element the TypeElement to inspect
+	 * @return the name of the class.
+	 */
+	public static String getClassName(Element element) {
         Element currElement = element;
         String result = element.getSimpleName().toString();
         while (currElement.getEnclosingElement() != null) {

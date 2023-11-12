@@ -4,8 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.magiccode.json</groupId>
 	<artifactId>json-mapper</artifactId>
-	<version>0.0.3</version>
-	<name>Json Mapper</name>
+	<version>0.0.8</version>
 	<description>Provides annotations for entity-json mapping dto generation</description>
 	<url>https://github.com/CodeWeazle/json-mapper</url>
 
@@ -41,6 +40,20 @@
 			<version>${jackson.version}</version>
 		</dependency>
 
+		<!-- Java 8 date/time support according to jsr310 -->
+		<dependency>
+		    <groupId>com.fasterxml.jackson.datatype</groupId>
+		    <artifactId>jackson-datatype-jsr310</artifactId>
+		   <version>${jackson.version}</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
+		<dependency>
+		    <groupId>com.fasterxml.jackson.datatype</groupId>
+		    <artifactId>jackson-datatype-jdk8</artifactId>
+		    <version>${jackson.version}</version>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -79,7 +92,12 @@
 				<configuration>
 					<source>${java.version}</source>
 					<target>${java.version}</target>
+					<compilerArgs>
+	                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+	                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+					</compilerArgs>
 				</configuration>
+				
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -139,11 +157,19 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!--
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
-				<version>1.5</version>
+				<version>3.1.0</version>
+				<configuration>
+				  <keyname>CDB4C379E59BDB0637A37786E38088ACA8297A36</keyname>
+				  <passphraseServerId>CDB4C379E59BDB0637A37786E38088ACA8297A36</passphraseServerId>
+				  <gpgArguments>
+				    <arg>--pinentry-mode</arg>
+				    <arg>loopback</arg>
+				  </gpgArguments>
+				</configuration>
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
@@ -151,40 +177,21 @@
 						<goals>
 							<goal>sign</goal>
 						</goals>
-					</execution>
-				</executions>
-			</plugin>
--->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-gpg-plugin</artifactId>
-				<version>1.5</version>
-				<executions>
-					<execution>
-						<id>sign-artifacts</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>sign</goal>
-						</goals>
-						<configuration>
-							<keyname>CDB4C379E59BDB0637A37786E38088ACA8297A36</keyname>
-							<passphraseServerId>
-								CDB4C379E59BDB0637A37786E38088ACA8297A36</passphraseServerId>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
 			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.6</version>
-				<extensions>true</extensions>
-				<configuration>
-					<serverId>nexus</serverId>
-					<nexusUrl>http://localhost:8081/nexus/</nexusUrl>
-				</configuration>
+			  <groupId>org.sonatype.central</groupId>
+			  <artifactId>central-publishing-maven-plugin</artifactId>
+			  <version>0.1.2</version>
+			  <extensions>true</extensions>
+			  <configuration>
+			    <publishingServerId>central</publishingServerId>
+			    <tokenEnabled>true</tokenEnabled>
+			  </configuration>
 			</plugin>
+
 		</plugins>
 	</build>
 
@@ -201,14 +208,6 @@
 			</plugin>
 		</plugins>
 	</reporting>
-
-	<distributionManagement>
-		<repository>
-			<id>maven-central</id>
-			<name>Central Repository OSSRH</name>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
 
 	<licenses>
 		<license>
@@ -234,3 +233,4 @@
 	</scm>
 
 </project>
+
