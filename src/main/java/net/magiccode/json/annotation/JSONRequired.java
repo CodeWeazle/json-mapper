@@ -8,8 +8,6 @@ import static java.lang.annotation.ElementType.FIELD;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Target;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 @Documented
 @Target({FIELD})
 /**

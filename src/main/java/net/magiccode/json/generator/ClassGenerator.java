@@ -1,7 +1,6 @@
 package net.magiccode.json.generator;
 
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
