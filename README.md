@@ -173,8 +173,9 @@ Then an instance of the generated class can be created from the annotated class 
 			e.printStackTrace();
 		}
 ```
+The *of()* method of the generated class can possibly throw an *IllegalAccessException*, because the setters need to be called indirectly by the use of reflection. This is, because we cannot know if the class our code is generated from uses fluent accessors or not, so generating a mapping method calling setters could easily fail. Calling a (setter) method via reflection needs proper handling of the *IllegalAccessException* (which is quite unlikely to be thrown), which we leave to the implementation of the class that calls this code, because we believe the author of that can deal with it according to the context the code is running in.
 
-To map the instance back into the original class, the *to()* method can should be employed, like in this example
+To map the instance back into the original class, the *to()* method should be employed, like in this example
 ```
 	Person person = personMapped.to();
 ```
@@ -197,7 +198,7 @@ public class Person {
 	
 }
 ```
-if *Address* and *Contact* are annotated with *@JSONMapped, the mapping class would be generated as follows:
+if *Address* and *Contact* are annotated with *@JSONMapped*, the mapping class would be generated as follows:
  
 ```
 @JSONMappedBy(
