@@ -161,6 +161,25 @@ public class JSONExample01 implements Serializable {
 ```
 Getter and setter methods are being generated as necessary.
 
+
+Then an instance of the generated class can be created from the annotated class like so, for instance:
+```
+		JSONPerson personMapped;
+		try {
+			personMapped = JSONPerson.of(person);
+			// print the object 
+			System.out.println(pj.toJSONString());
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
+```
+
+To map the instance back into the original class, the *to()* method can should be employed, like in this example
+```
+	Person person = personMapped.to();
+```
+
+
 ### Fields that are @JSONMapped
 
 Fields of classes which are annotated by @JSONMapped themselves will be mapped into the appropriate (generated) mapping class of this field. Mapping of values happens automatically.
