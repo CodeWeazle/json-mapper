@@ -46,6 +46,23 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 	</build>
 ```
 
+### Gradle
+```
+implementation group: 'net.magiccode.json', name: 'json-mapper', version: '0.0.9'
+
+...
+dependencies {
+  compile("net.magiccode.json:json-mapper:0.0.9")
+  annotationProcessor("net.magiccode.json:json-mapper:0.0.9")
+  ...
+}
+```
+
+### Others
+
+For other build systems please consult the current [maven-central site](https://central.sonatype.com/artifact/net.magiccode.json/json-mapper)
+
+
 ## Annotations
 
 ### @JSONMapped
