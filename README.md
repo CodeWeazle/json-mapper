@@ -62,12 +62,12 @@ Some arguments can be provided to have some influence on the code generation.
 
 | argument | values | Description |
 | --- | --- | -- |
-|useLombok |true, **false**|Setting useLombok to true generates much less code, because getters and setters can be replace by lombok annotations, just as the constructor(s), toString etc.|
+|useLombok |true, **false**|Setting useLombok to true generates much less code, because getters and setters can be replaced by lombok annotations, just as the constructor(s), toString etc.|
 |fluentAccessors |true, **false**|Creates getters and setters that do not start with *get*, *is* or *set* rather than the actual name of the field. If useLombok is *true*, this setting is passed on to @Accessors(fluent=true&#124;false).|
 |chainedSetters |**true**, false|Generates setters which return *this*. |
 |prefix | JSON |Adds a prefix to the name of the generated class. Defaults to "JSON"|
 |packageName| |Defines the name of the packacke for the generated class. If no *packageName* is given, this defaults to the package of the annotated class.|
-|subpackageName| |Defines the name for a subpackage added to the default if *packageName* is not specified.|
+|subpackageName| json |Defines the name for a subpackage added to the default if *packageName* is not specified. The default value is *json*|
 |jsonInclude |**ALWAYS**, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS|Generated classes are annotated with *@JsonInclude*. This defaults to ALWAYS, but can be specified otherwise by using the *jsonInclude* argument.|
 |superClass| |Fully qualified name of the superclass that the generated class will extend.|
 |interfaces| |Comma separated list of fully qualified name of the interfaces that the generated class will implement.|
@@ -173,8 +173,9 @@ Then an instance of the generated class can be created from the annotated class 
 			e.printStackTrace();
 		}
 ```
+The *of()* method of the generated class can possibly throw an *IllegalAccessException*, because the setters need to be called indirectly by the use of reflection. This is, because we cannot know if the class our code is generated from uses fluent accessors or not, so generating a mapping method calling setters could easily fail. Calling a (setter) method via reflection needs proper handling of the *IllegalAccessException* (which is quite unlikely to be thrown), which we leave to the implementation of the class that calls this code, because we believe the author of that can deal with it according to the context the code is running in.
 
-To map the instance back into the original class, the *to()* method can should be employed, like in this example
+To map the instance back into the original class, the *to()* method should be employed, like in this example
 ```
 	Person person = personMapped.to();
 ```
@@ -197,7 +198,7 @@ public class Person {
 	
 }
 ```
-if *Address* and *Contact* are annotated with *@JSONMapped, the mapping class would be generated as follows:
+if *Address* and *Contact* are annotated with *@JSONMapped*, the mapping class would be generated as follows:
  
 ```
 @JSONMappedBy(

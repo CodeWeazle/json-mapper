@@ -156,7 +156,6 @@ public class JSONClassGenerator implements ClassGenerator {
 		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
 
 			TypeMirror fieldType = field.asType();
-
 			TypeName fieldTypeName = TypeName.get(fieldType);
 			boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 			if (fieldIsMapped) {
@@ -895,7 +894,9 @@ public class JSONClassGenerator implements ClassGenerator {
 				.addStatement("$T $L = new $T()", externalClass, objectName, externalClass);
 
 		AtomicInteger fieldCount = new AtomicInteger(0);
-		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
+		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field) &&
+														 !field.getModifiers().contains(Modifier.FINAL))
+					  .forEach(field -> {
 			boolean fieldIsMapped = fieldIsAnnotedWith(field, JSONMapped.class);
 			String fieldName = field.getSimpleName().toString();
 			String localFieldName = "field" + fieldCount.getAndIncrement();
