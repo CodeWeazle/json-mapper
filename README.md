@@ -6,7 +6,7 @@
 
 ### Maven
 
-Add the annotation processor class to your pom.xml and rebuild your project. (The version shown is related to the *release* branch, which is also available on the maven-central repository.)
+Add the annotation processor class to your pom.xml and rebuild your project. (The version shown is related to the *release* branch, which is also available on the [maven-central repository] (https://central.sonatype.com/).)
 
 ```
 
@@ -162,20 +162,25 @@ public class JSONExample01 implements Serializable {
 Getter and setter methods are being generated as necessary.
 
 
-Then an instance of the generated class can be created from the annotated class like so, for instance:
+### of/to methods
+
+To create a mapped class of an instance +f *Person*, apply the *of()* method like so
+
 ```
-		JSONPerson personMapped;
-		try {
-			personMapped = JSONPerson.of(person);
-			// print the object 
-			System.out.println(personMapped.toJSONString());
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		}
+	JSONPerson personMapped;
+	try {
+		personMapped = JSONPerson.of(person);
+		// print the object 
+		System.out.println(personMapped.toJSONString());
+	} catch (IllegalAccessException e) {
+		e.printStackTrace();
+	}
 ```
+
 The *of()* method of the generated class can possibly throw an *IllegalAccessException*, because the setters need to be called indirectly by the use of reflection. This is, because we cannot know if the class our code is generated from uses fluent accessors or not, so generating a mapping method calling setters could easily fail. Calling a (setter) method via reflection needs proper handling of the *IllegalAccessException* (which is quite unlikely to be thrown), which we leave to the implementation of the class that calls this code, because we believe the author of that can deal with it according to the context the code is running in.
 
 To map the instance back into the original class, the *to()* method should be employed, like in this example
+
 ```
 	try {
 		Person person = personMapped.to();
@@ -345,6 +350,18 @@ At the time being, the dependencies used by *json-mapper* are
 		<groupId>com.fasterxml.jackson.core</groupId>
 		<artifactId>jackson-annotations</artifactId>
 		<version>${jackson.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.fasterxml.jackson.datatype</groupId>
+		<artifactId>jackson-datatype-jsr310</artifactId>
+		<version>${jackson.version}</version>
+	</dependency>
+		
+	<dependency>
+	    <groupId>com.fasterxml.jackson.datatype</groupId>
+	    <artifactId>jackson-datatype-jdk8</artifactId>
+	    <version>${jackson.version}</version>
 	</dependency>
 
 	<dependency>
