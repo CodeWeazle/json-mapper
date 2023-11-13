@@ -1,3 +1,14 @@
+/**
+ * json-mapper
+ * 
+ * Published under Apache-2.0 license (https://github.com/CodeWeazle/json-mapper/blob/main/LICENSE)
+ * 
+ * Code: https://github.com/CodeWeazle/json-mapper
+ * 
+ * @author CodeWeazle (2023)
+ * 
+ * Filename: JSONClassGenerator.java
+ */
 package net.magiccode.json.generator;
 
 import java.io.IOException;
@@ -56,10 +67,12 @@ import net.magiccode.json.annotation.JSONTransient;
 import net.magiccode.json.util.ReflectionUtil;
 import net.magiccode.json.util.StringUtil;
 
-// import com.sun.tools.javac.code.Attribute;
-
+// 
 /**
- * Generate a copy
+ * Generates JSON annotated mapping class for a given java class.
+ * 
+ * The generated class provides all the fields of the annotated class as well as methods to 
+ * map between instances of these two classes seamlessly. (to/of methods)
  */
 public class JSONClassGenerator implements ClassGenerator {
 
@@ -392,10 +405,10 @@ public class JSONClassGenerator implements ClassGenerator {
 
 				.addJavadoc(CodeBlock
 					    .builder()
-					    .add("Creates object from source class. Since source class has not been compiled at this point,\n")
-					    .add("calling the setters on the source would lead to an exception.\n")
-					    .add("For this reason the getter call is wrapped by reflection.\n\n")
-					    .add("@param $L - the incoming object of type $L to be mapped.", incomingObjectName, incomingObjectClass.simpleName())
+					    .add("Creates a populated instance of {@code $L} from the given instance of {@code $L},\n\n", ClassName.get(packageName, className),
+					    																							incomingObjectClass.simpleName())
+					    .add("@param $L - the incoming object of type $L to be mapped.\n", incomingObjectName, incomingObjectClass.simpleName())
+					    .add("@return populated instance of {@code $L}.\n", ClassName.get(packageName, className))
 					    .build());
 		
 				AtomicInteger fieldCount = new AtomicInteger(0);
@@ -768,12 +781,12 @@ public class JSONClassGenerator implements ClassGenerator {
 					MethodSpec.Builder mapMethodBuilder = MethodSpec.methodBuilder(methodName)
 						.addJavadoc(CodeBlock
 							    .builder()
-							    .add("Method to map an instance of $L into instance of a generated class $L.\n", ((ClassName)sourceTypeArguments.get(typeIndex)).simpleName(),
+							    .add("Method to map an instance of {@code $L} into instance of a generated class {@code $L}.\n", ((ClassName)sourceTypeArguments.get(typeIndex)).simpleName(),
 							    																				 ((ClassName)destinationTypeArguments.get(typeIndex)).simpleName())
 							    .add("@param methods - List of methods to be created\n")
 							    .add("@param typeArguments - {@code TypeMirror}s of the arguments of the field to be mapped.\n")
 							    .add("@param typeArguments - {@code TypeName}s of the arguments of the field to be mapped.\n")
-							    .add("@return name of the method to be generated.\n")
+							    .add("@return populated instance of {@code $L}.\n", ((ClassName)destinationTypeArguments.get(typeIndex)).simpleName())
 							    .build())
 						.addModifiers(Modifier.PRIVATE, Modifier.STATIC);
 				
@@ -828,12 +841,12 @@ public class JSONClassGenerator implements ClassGenerator {
 					MethodSpec mapMethod = MethodSpec.methodBuilder(methodName)
 						.addJavadoc(CodeBlock
 							    .builder()
-							    .add("Method to map an instance of $L back into an instance of the annotated class $L.\n", ((ClassName) sourceTypeArguments.get(typeIndex)).simpleName(),
+							    .add("Method to map an instance of {@code $L} back into an instance of the annotated class {@code $L}.\n", ((ClassName) sourceTypeArguments.get(typeIndex)).simpleName(),
 							    																						   ((ClassName) destinationTypeArguments.get(typeIndex)).simpleName())
 							    .add("@param methods - List of methods to be created\n")
 							    .add("@param typeArguments - {@code TypeMirror}s of the arguments of the field to be mapped.\n")
 							    .add("@param typeArguments - {@code TypeName}s of the arguments of the field to be mapped.\n")
-							    .add("@return name of the method to be generated.\n")
+							    .add("@return populated instance of  {@code $L}.\n",((ClassName) destinationTypeArguments.get(typeIndex)).simpleName())
 							    .build())
 						.addModifiers(Modifier.PRIVATE, Modifier.STATIC)
 						.addParameter(sourceTypeArguments.get(typeIndex), "e", Modifier.FINAL)
@@ -886,11 +899,11 @@ public class JSONClassGenerator implements ClassGenerator {
 
 		MethodSpec.Builder to = MethodSpec.methodBuilder("to").addModifiers(Modifier.PUBLIC)
 				.addException(IllegalAccessException.class)
-				.addJavadoc(CodeBlock.builder().add("Recreates original object from json object instance,\n")
+				.addJavadoc(CodeBlock.builder().add("Recreates instance of {@code $L} object from json object instance,\n", externalClass)
 						.add("Calling the setters on the source would lead to an exception and is insecure,\n")
 						.add("because we cannot predict if fluent accessors are being used.\n")
 						.add("For this reason the getter call is wrapped by reflection.\n\n")
-						.add("@return the recreated object instance of $L", objectName).build())
+						.add("@return the recreated object instance of $L", externalClass).build())
 				.addStatement("$T $L = new $T()", externalClass, objectName, externalClass);
 
 		AtomicInteger fieldCount = new AtomicInteger(0);

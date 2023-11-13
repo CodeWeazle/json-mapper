@@ -1,5 +1,13 @@
 /**
+ * json-mapper
  * 
+ * Published under Apache-2.0 license (https://github.com/CodeWeazle/json-mapper/blob/main/LICENSE)
+ * 
+ * Code: https://github.com/CodeWeazle/json-mapper
+ * 
+ * @author CodeWeazle (2023)
+ * 
+ * Filename: JsonMapper.java
  */
 package net.magiccode.json;
 
@@ -37,7 +45,11 @@ import net.magiccode.json.generator.ElementInfo.ElementInfoBuilder;
 import net.magiccode.json.generator.JSONClassGenerator;
 
 /**
- * Annotation processor with the purpose to generate Jackson annotated Java code for JSON DTOs. 
+ * Annotation processor with the purpose to generate Jackson annotated Java code for JSON DTOs.
+ * 
+ *  Supports use of the {@code JSONMapped} annotation to create a copy of the annotated class.
+ *  This provides methods (of/to) to map between populated instances of the annotated and the 
+ *  generated class.
  */
 @SupportedAnnotationTypes("net.magiccode.json.annotation.*")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)

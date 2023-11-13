@@ -1,5 +1,13 @@
 /**
+ * json-mapper
  * 
+ * Published under Apache-2.0 license (https://github.com/CodeWeazle/json-mapper/blob/main/LICENSE)
+ * 
+ * Code: https://github.com/CodeWeazle/json-mapper
+ * 
+ * @author CodeWeazle (2023)
+ * 
+ * Filename: StringUtil.java
  */
 package net.magiccode.json.util;
 
@@ -7,7 +15,7 @@ import java.util.Arrays;
 
 
 /**
- * helpful routines around strings
+ * helpful routines for checking and modifying strings.
  * 
  */
 public class StringUtil {
