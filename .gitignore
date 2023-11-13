@@ -32,3 +32,6 @@ org.*/
 
 pom.xml.swp
 .factorypath
+
+#exclude GitHub workflows
+.github/
