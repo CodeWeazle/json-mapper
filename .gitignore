@@ -34,4 +34,5 @@ pom.xml.swp
 .factorypath
 
 #exclude GitHub workflows
-.github/
+.github/workflows/maven.yml
+
