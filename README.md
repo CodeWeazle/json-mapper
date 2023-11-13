@@ -136,7 +136,7 @@ public class Example01 {
 }
 ```
 
-When we add the annotation @JSONMapped (and assume we did not set a different prefix but stick to 'JSON' for now), the generated class would look like this_
+When we add the annotation @JSONMapped (and assume we did not set a different prefix but stick to 'JSON' for now), the generated class would look like this:
 ```
  @JSONMappedBy(
         mappedClass = Example01.class
