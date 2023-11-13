@@ -6,7 +6,7 @@
 
 ### Maven
 
-Add the annotation processor class to your pom.xml and rebuild your project. (The version shown is related to the *release* branch, which is also available on the [maven-central repository]([url](https://central.sonatype.com/)).)
+Add the annotation processor class to your pom.xml and rebuild your project. (The version shown is related to the *release* branch, which is also available on the [maven-central repository](https://central.sonatype.com/).)
 
 ```
 
