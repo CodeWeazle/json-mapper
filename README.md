@@ -168,7 +168,7 @@ Then an instance of the generated class can be created from the annotated class 
 		try {
 			personMapped = JSONPerson.of(person);
 			// print the object 
-			System.out.println(pj.toJSONString());
+			System.out.println(personMapped.toJSONString());
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 		}
@@ -177,7 +177,11 @@ The *of()* method of the generated class can possibly throw an *IllegalAccessExc
 
 To map the instance back into the original class, the *to()* method should be employed, like in this example
 ```
-	Person person = personMapped.to();
+	try {
+		Person person = personMapped.to();
+	} catch (IllegalAccessException e) {
+		e.printStackTrace();
+	}
 ```
 
 
@@ -222,6 +226,8 @@ public class JSONPerson implements Serializable {
 
     @JsonProperty("contact")
     private JSONContact contact;
+    ...
+}
 ```
 
 
@@ -248,7 +254,7 @@ public class Person {
 	List<Address> addresses;
 	
 	List<Contact> contacts;
-	
+
 }
 ```
 Assumed the prefix is *JSON* as default and the classes *Address* and *Contact* are annotated with @JSONMapped as well, the generated code would result in the following class (methods ommitted)
@@ -280,6 +286,8 @@ public class JSONPerson implements Serializable {
 
     @JsonProperty("contacts")
     private List<JSONContact> contacts;
+    ...
+}
 ```
 As it can be seen, *Contacts* has been mapped by *JSONContact* and Address has been mapped by *JSONAddress*. The mapping of the contents of these types is handled by the code in the generated class
 when the *of()* or *to()* methods are being called.
