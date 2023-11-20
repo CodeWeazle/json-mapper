@@ -314,7 +314,7 @@ public interface ClassGenerator {
 									   Class<?> annotationClazz) {
 		TypeMirror fieldType = field.asType();
 		TypeElement typeElement = getElementUtils().getTypeElement(ClassName.get(fieldType).toString());		
-		return typeIsAnnotatedWith(annotationClazz, typeElement);
+		return typeIsAnnotatedWith(typeElement, annotationClazz);
 	}
 
 	/**
@@ -322,7 +322,7 @@ public interface ClassGenerator {
 	 * @param typeElement
 	 * @return
 	 */
-	default boolean typeIsAnnotatedWith(Class<?> annotationClazz, TypeElement typeElement) {
+	default boolean typeIsAnnotatedWith(TypeElement typeElement, Class<?> annotationClazz ) {
 		return (typeElement != null &&
 				typeElement.getAnnotationMirrors().stream()
 								 .anyMatch(annotation -> annotation.getAnnotationType().toString()
@@ -367,6 +367,12 @@ public interface ClassGenerator {
 		return fieldType;
 	}
 
+	/**
+	 * get type arguments from given type
+	 * 
+	 * @param type
+	 * @return
+	 */
 	default List<TypeName> obtainTypeArguments(TypeMirror type) {
 		List<? extends TypeMirror> typeArgumentMirrors = ((DeclaredType) type).getTypeArguments();
 		List<TypeName> typeArguments = new ArrayList<>(typeArgumentMirrors.size());
@@ -378,11 +384,11 @@ public interface ClassGenerator {
 
 	/**
 	 * Collect types of a parametrized field and return mapped type
-	 * if any of them is annotated with {@code @JSONMapped} itself.
+	 * if any of them is annotated with with the mapping annotation itself.
 	 * 
 	 * @param annotationInfo
 	 * @param typeArguments
-	 * @return
+	 * @return List of collected (and possibly mapped) types
 	 */
 	default List<TypeName> collectTypes(ElementInfo annotationInfo, 
 										 List<TypeName> typeArguments) { 

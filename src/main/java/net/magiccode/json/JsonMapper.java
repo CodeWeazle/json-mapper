@@ -12,6 +12,7 @@
 package net.magiccode.json;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,9 +41,11 @@ import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 
 import net.magiccode.json.annotation.JSONMapped;
+import net.magiccode.json.annotation.POJOMapped;
 import net.magiccode.json.generator.ElementInfo;
 import net.magiccode.json.generator.ElementInfo.ElementInfoBuilder;
 import net.magiccode.json.generator.JSONClassGenerator;
+import net.magiccode.json.generator.PlainClassGenerator;
 
 /**
  * Annotation processor with the purpose to generate Jackson annotated Java code for JSON DTOs.
@@ -94,8 +97,9 @@ public class JsonMapper extends MapperBase {
 
 		Map<ClassName, List<ElementInfo>> result = new HashMap<>();
 
+		// JSON
 		// collect annotation information
-		processJSONMapped(roundEnv, result);
+		processMappedClasses(roundEnv, result,JSONMapped.class);
 
 		// generate code with collected results
 		try {
@@ -103,6 +107,20 @@ public class JsonMapper extends MapperBase {
 		} catch (IOException e) {
 			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
 		}
+		
+		result = new HashMap<>();
+		// POJO
+		// collect annotation information
+		processMappedClasses(roundEnv, result, POJOMapped.class);
+
+		// generate code with collected results
+		try {
+			new PlainClassGenerator(procEnv, filer, messager, result).generate();
+		} catch (IOException e) {
+			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
+		}
+		
+		
 		return true;
 	}
 
@@ -112,26 +130,54 @@ public class JsonMapper extends MapperBase {
 	 * @param roundEnv - The environment for this round
 	 * @param result - Map containing the generated information from the annotated {@code TypeElement}
 	 */
-	private void processJSONMapped(final RoundEnvironment roundEnv, final Map<ClassName, List<ElementInfo>> result) {
+	private void processMappedClasses(final RoundEnvironment roundEnv, final Map<ClassName, List<ElementInfo>> result, final Class<? extends Annotation> annotationClass) {
 		
 		// retrieve elements annotated with JSONMapped
-		for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(JSONMapped.class)) {
+		for (Element annotatedElement : roundEnv.getElementsAnnotatedWith( annotationClass ) ) {
 			// if the annotation is not on a class, report an error !
 			if (annotatedElement.getKind() != ElementKind.CLASS) {
-				messager.printMessage(Diagnostic.Kind.WARNING, "Only class can be annotated with JSONMapped",
+				messager.printMessage(Diagnostic.Kind.WARNING, "Only class can be annotated with "+annotatedElement.getSimpleName(),
 						annotatedElement);
 				continue;
 			}
 			
 			TypeElement typeElement = (TypeElement) annotatedElement;
-			// only execute the following code when the given element has is @JSONMapped
-			JSONMapped jsonMapped = annotatedElement.getAnnotation(JSONMapped.class);
-			if (jsonMapped != null) {
-				generateClassInformation (result, typeElement, jsonMapped);
-			}
 			
+			if (annotationClass.getName().equals(JSONMapped.class.getName()))
+				generateJSONClassInformation(result, annotatedElement, typeElement);
+			else if (annotationClass.getName().equals(POJOMapped.class.getName()))
+				generatePOJOClassInformation(result, annotatedElement, typeElement);
 		}
 
+	}
+
+	/**
+	 * @param result
+	 * @param annotatedElement
+	 * @param typeElement
+	 */
+	private void generateJSONClassInformation(final Map<ClassName, List<ElementInfo>> result,
+		Element annotatedElement, TypeElement typeElement) {
+		// only execute the following code when the given element has is @JSONMapped
+		JSONMapped jsonMapped = annotatedElement.getAnnotation(JSONMapped.class);
+		if (jsonMapped != null) {
+			generateJSONClassInformation (result, typeElement, jsonMapped);
+		}
+	}
+
+	
+	/**
+	 * @param result
+	 * @param annotatedElement
+	 * @param typeElement
+	 */
+	private void generatePOJOClassInformation(final Map<ClassName, List<ElementInfo>> result,
+		Element annotatedElement, TypeElement typeElement) {
+		// only execute the following code when the given element has is @JSONMapped
+		POJOMapped pojoMapped = annotatedElement.getAnnotation(POJOMapped.class);
+		if (pojoMapped != null) {
+			generatePojoClassInformation (result, typeElement, pojoMapped);
+		}
 	}
 
 	
@@ -142,7 +188,7 @@ public class JsonMapper extends MapperBase {
 	 * @param annotatedElement - The annotated {@code TypeElement}
 	 * @param jsonMapped - The {@code @JSONMapped} annotation
 	 */
-	private void generateClassInformation (final Map<ClassName, List<ElementInfo>> result,
+	private void generateJSONClassInformation (final Map<ClassName, List<ElementInfo>> result,
 										  TypeElement annotatedElement,
 										  JSONMapped jsonMapped) {
 					
@@ -161,8 +207,60 @@ public class JsonMapper extends MapperBase {
 				
 				/** find fields */
 				List<VariableElement> fields = ElementFilter.fieldsIn(annotatedElement.getEnclosedElements());				
-				/** find typeElement for specified super-classs */
+				/** find typeElement for specified super-classs */				
 				
+				if (superClassElement == null)
+					superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());
+				
+				if (jsonMapped.inheritFields())
+					addSuperclassFields(annotatedElement, fields);
+				
+				/**
+				 * we have to remember, which interface exists and what needs to be created.
+				 * We use a map for this purpose. Key is the class-name, value the found TypeElement
+				 */
+				final Map<String, TypeElement> interfaces = new HashMap<>();
+				if (jsonMapped.interfaces() != null) {
+					Arrays.asList(jsonMapped.interfaces()).stream().forEach(intf -> {
+						TypeElement interfaceElement = procEnv.getElementUtils().getTypeElement(intf);
+						interfaces.put(intf, interfaceElement);
+					});
+				}
+				ElementInfo elementInfo = createJsonElementInfo(jsonMapped, annotatedElement, className, fields, superClassElement, interfaces);
+				result.get(className).add(elementInfo);
+				
+			}
+			
+	}
+	
+	
+	/**
+	 * collect class information for later generation
+	 * 
+	 * @param result - Map containing the generated information from the annotated {@code TypeElement}
+	 * @param annotatedElement - The annotated {@code TypeElement}
+	 * @param jsonMapped - The {@code @POJOMapped} annotation
+	 */
+	private void generatePojoClassInformation (final Map<ClassName, List<ElementInfo>> result,
+										  TypeElement annotatedElement,
+										  POJOMapped jsonMapped) {
+					
+			/* check for superclass
+			 * 
+			 */
+			TypeElement superClassElement = null;			
+			// deriving the name of the class containing the annotation
+			ClassName className = ClassName.get(annotatedElement);	
+			messager.printMessage(Diagnostic.Kind.NOTE, "Class " + className.canonicalName());
+	
+			if (!result.containsKey(className))
+				result.put(className, new ArrayList<ElementInfo>());
+	
+			if (result.containsKey(className)) {
+				
+				/** find fields */
+				List<VariableElement> fields = ElementFilter.fieldsIn(annotatedElement.getEnclosedElements());				
+				/** find typeElement for specified super-classs */				
 				
 				if (superClassElement == null)
 					superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());
@@ -182,7 +280,7 @@ public class JsonMapper extends MapperBase {
 					});
 				}
 				
-				ElementInfo elementInfo = createElementInfo(jsonMapped, annotatedElement, className, fields, superClassElement, interfaces);
+				ElementInfo elementInfo = createPojoElementInfo(jsonMapped, annotatedElement, className, fields, superClassElement, interfaces);
 				result.get(className).add(elementInfo);
 				
 			}
@@ -224,6 +322,59 @@ public class JsonMapper extends MapperBase {
 	 * create ElementInfo object out of given JSONMapped information, extended by 
 	 * information about the environment like the fields of the annotated class.
 	 * 
+	 * @param pojoMapped - The {@code @JSONMapped} annotation
+	 * @param typeElement - the annotated {@code TypeElement}
+	 * @param className {@code ClassName} instance of the class containing the{@code @POJOMapped} annotaton
+	 * @param fields - {@code VariableElement} representation of the fields of the annotated class
+	 * @param superClassElement - {@code TypeElement} of (an existing) class to be extended by every generated class
+	 * @param interfaces - {@code java.util.Map} containing all interfaces the generated classes are to implement.
+	 * @return an instance of the class {@code ElementInfo} containing all information from the annotation (or defaults), that are going to be used for the code generation. 
+	 */
+	private ElementInfo createPojoElementInfo(final POJOMapped pojoMapped, 
+										  	  final TypeElement typeElement, 
+										  	  final ClassName className,
+										  	  final List<VariableElement> fields, 
+										  	  final TypeElement superClassElement, 
+										  	  final Map<String, TypeElement> interfaces) {
+		
+		ElementInfoBuilder elementInfoBuiler = ElementInfo.builder().className(className.simpleName()) // the name of the class
+																										// containing the
+																										// annotation
+																	.packageName(pojoMapped.packageName()) // package name of the generated class (optional), default is
+																	// package of annotated class
+																	.subpackageName(pojoMapped.subpackageName()) // subpackage name added to annotated class package if
+																	// packaage name is not given
+																	.prefix(pojoMapped.prefix()) // prefix for generated class, defaults to JSON
+																	.chainedSetters(pojoMapped.chainedSetters()) // true generates "return this" for setters.
+																	.fluentAccessors(pojoMapped.fluentAccessors())
+																	.element(typeElement) // the current element
+																	.fields(fields) // field descriptions of the annotated class
+																	.inheritFields(pojoMapped.inheritFields()) // inherit fields from superclasses
+																	.useLombok(pojoMapped.useLombok());
+		// add superclass
+		if (superClassElement != null) {
+			elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));
+		}
+		// add interfaces
+		ElementInfo elementInfo = elementInfoBuiler.build();
+		if (interfaces != null && interfaces.size()>0) {
+			interfaces.entrySet().stream()
+								 // add only existing interfaces
+								 .filter(entry -> entry.getValue() != null)
+								 // use only the TypeElement
+								 .map(entry -> entry.getValue())
+								 .forEach(intf-> {
+									 elementInfo.addInterface(ClassName.get(intf));
+			});
+		}
+		return elementInfo;
+	}
+
+
+	/**
+	 * create ElementInfo object out of given JSONMapped information, extended by 
+	 * information about the environment like the fields of the annotated class.
+	 * 
 	 * @param jsonMapped - The {@code @JSONMapped} annotation
 	 * @param typeElement - the annotated {@code TypeElement}
 	 * @param className {@code ClassName} instance of the class containing the{@code @JSONMapped} annotaton
@@ -232,7 +383,7 @@ public class JsonMapper extends MapperBase {
 	 * @param interfaces - {@code java.util.Map} containing all interfaces the generated classes are to implement.
 	 * @return an instance of the class {@code ElementInfo} containing all information from the annotation (or defaults), that are going to be used for the code generation. 
 	 */
-	private ElementInfo createElementInfo(final JSONMapped jsonMapped, 
+	private ElementInfo createJsonElementInfo(final JSONMapped jsonMapped, 
 										  final TypeElement typeElement, 
 										  final ClassName className,
 										  final List<VariableElement> fields, 
@@ -277,5 +428,6 @@ public class JsonMapper extends MapperBase {
 		}
 		return elementInfo;
 	}
+
 
 }

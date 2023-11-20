@@ -11,8 +11,6 @@
  */
 package net.magiccode.json.generator;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,25 +26,15 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
-import net.magiccode.json.annotation.JSONMapped;
-import net.magiccode.json.annotation.JSONMappedBy;
-import net.magiccode.json.annotation.JSONRequired;
-import net.magiccode.json.annotation.JSONTransient;
-import net.magiccode.json.util.StringUtil;
+import net.magiccode.json.annotation.POJOMapped;
+import net.magiccode.json.annotation.POJOMappedBy;
+import net.magiccode.json.annotation.POJOTransient;
 
 // 
 /**
@@ -55,7 +43,7 @@ import net.magiccode.json.util.StringUtil;
  * The generated class provides all the fields of the annotated class as well as methods to 
  * map between instances of these two classes seamlessly. (to/of methods)
  */
-public class JSONClassGenerator extends AbstractClassGenerator {
+public class PlainClassGenerator extends AbstractClassGenerator {
 
 	/**
 	 * The purpose of this class is to generate JSON annotated Java code using the
@@ -67,7 +55,7 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 	 * @param messager - used to output messages
 	 * @param input    - information collected beforehand based on the annotation
 	 */
-	public JSONClassGenerator(ProcessingEnvironment procEnv, Filer filer, Messager messager,
+	public PlainClassGenerator(ProcessingEnvironment procEnv, Filer filer, Messager messager,
 			Map<ClassName, List<ElementInfo>> input) {
 		super(procEnv, filer, messager, input);
 	}
@@ -81,7 +69,6 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 	public
 	void createSpecificFieldsAndMethods(ClassName incomingObjectClass, String packageName, String className,
 			ElementInfo annotationInfo, List<FieldSpec> fields, Map<String, MethodSpec> methods) {
-		createToJSONString(methods);		
 	}
 	
 	/**
@@ -91,45 +78,21 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 	 * @return annotation {@code AnnotationSpec} instance of created mapped-by annotation
 	 */
 	public AnnotationSpec createMappedByAnnotation(final ElementInfo annotationInfo) {
-		return AnnotationSpec.builder(JSONMappedBy.class)
+		return AnnotationSpec.builder(POJOMappedBy.class)
 				.addMember("mappedClass", "$T.class", ClassName.get(annotationInfo.element())).build();
 	}
 	
 	/**
-	 * annotations specifically for the type JSON
+	 * no annotations necessary
 	 *
 	 * @param annotationInfo {@code ElementInfo} instance describing the annotation options
 	 * @return List of annotations {@code AnnotationSpec} instances or null.
 	 */
 	
 	public List<AnnotationSpec>  getAdditionalAnnotationsForClass(final ElementInfo annotationInfo) {
-		List<AnnotationSpec> annotations = List.of(
-				AnnotationSpec.builder(JsonInclude.class)
-					.addMember("value", "$T.$L", Include.class, annotationInfo.jsonInclude().name()).build());
-		return annotations;
+		return null;
 	}
 	
-
-	/**
-	 * generate toString method
-	 * 
-	 * @param methods - Map containing the methods to be created. Key is the name of the method, value a MethodSpec instance
-	 * 		
-	 */
-	private void createToJSONString(final Map<String, MethodSpec> methods) {
-		// create toJSONString method
-		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toJSONString").addModifiers(Modifier.PUBLIC)
-				.addJavadoc(CodeBlock.builder().add("provides a formatted JSON string with all fields\n")
-						.add("and their current values.\n").build())
-				.addStatement("$T mapper = new $T()", ObjectMapper.class, ObjectMapper.class)
-				.addStatement("mapper.findAndRegisterModules()")
-				.addStatement("String value = this.getClass().getName()").beginControlFlow("try")
-				.addStatement("value += mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this)")
-				.endControlFlow().beginControlFlow("catch ($T e)", JsonProcessingException.class)
-				.addStatement("e.printStackTrace()").endControlFlow().addStatement("return value")
-				.returns(ClassName.get(String.class));
-		methods.put("toJSONString",  toStringBuilder.build());
-	}
 
 	/**
 	 * create field
@@ -150,22 +113,7 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 		
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
-		if (field.getAnnotation(JSONTransient.class) == null && field.getAnnotation(JsonIgnore.class) == null) {
-			// check for java.time.LocalDate or java.time.LocalDateTime
-			
-			if (fieldClass.equals(ClassName.get(LocalDateTime.class))) {
-				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.dateTimePattern())).build());				
-			}
-			if (fieldClass.equals(ClassName.get(LocalDate.class))) {
-				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.datePattern())).build());
-			}
-			
-			AnnotationSpec.Builder jsonPropertyAnnotationBuilder = AnnotationSpec.builder(JsonProperty.class).addMember(
-					"value", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
-			if (field.getAnnotation(JSONRequired.class) != null) {
-				jsonPropertyAnnotationBuilder.addMember("required", "true");
-			}
-			annotations.add(jsonPropertyAnnotationBuilder.build());
+		if (field.getAnnotation(POJOTransient.class) == null) {
 			
 			TypeMirror type = field.asType();
 
@@ -188,8 +136,7 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 			fieldspec = fieldSpecBuilder.build();
 			
 		} else {
-			fieldspec = FieldSpec.builder(fieldClass, fieldName, Modifier.PRIVATE)
-								 .addAnnotation(JsonIgnore.class)
+			fieldspec = FieldSpec.builder(fieldClass, fieldName, Modifier.PRIVATE, Modifier.FINAL)
 								 .build();
 		}
 		return fieldspec;
@@ -206,11 +153,11 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 	}
 	
 	public boolean fieldIsMapped(final Element field) {
-		return fieldIsAnnotedWith(field, JSONMapped.class);
+		return fieldIsAnnotedWith(field, POJOMapped.class);
 	}
 
 	public boolean typeIsMapped(final TypeElement typeElement) {
-		return typeIsAnnotatedWith(typeElement, JSONMapped.class);
+		return typeIsAnnotatedWith(typeElement, POJOMapped.class);
 	}
 
 }
