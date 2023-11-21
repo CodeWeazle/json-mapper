@@ -437,7 +437,18 @@ public interface ClassGenerator {
 		return packageName;
 	}
 
+	/**
+	 * allow access to the {@code Types} provided to the {@code ClassGenerator} sub-classes constructor
+	 *  
+	 * @return {@code Types} provided to the {@code ClassGenerator} sub-classes constructor
+	 */
 	public Types getTypeUtils();
+	
+	/**
+	 * allow access to the {@code Elements} provided to the {@code ClassGenerator} sub-classes constructor
+	 *  
+	 * @return {@code Elements} provided to the {@code ClassGenerator} sub-classes constructor
+	 */
 	public Elements getElementUtils();
 	
 	/**
