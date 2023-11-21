@@ -42,10 +42,11 @@ import com.squareup.javapoet.ClassName;
 
 import net.magiccode.json.annotation.JSONMapped;
 import net.magiccode.json.annotation.POJOMapped;
+import net.magiccode.json.generator.ClassGeneratorFactory;
 import net.magiccode.json.generator.ElementInfo;
 import net.magiccode.json.generator.ElementInfo.ElementInfoBuilder;
+import net.magiccode.json.generator.GeneratorType;
 import net.magiccode.json.generator.JSONClassGenerator;
-import net.magiccode.json.generator.PlainClassGenerator;
 
 /**
  * Annotation processor with the purpose to generate Jackson annotated Java code for JSON DTOs.
@@ -103,7 +104,7 @@ public class JsonMapper extends MapperBase {
 
 		// generate code with collected results
 		try {
-			new JSONClassGenerator(procEnv, filer, messager, result).generate();
+			ClassGeneratorFactory.getClassGenerator(GeneratorType.JSON, procEnv, filer, messager, result).generate();
 		} catch (IOException e) {
 			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
 		}
@@ -114,8 +115,8 @@ public class JsonMapper extends MapperBase {
 		processMappedClasses(roundEnv, result, POJOMapped.class);
 
 		// generate code with collected results
-		try {
-			new PlainClassGenerator(procEnv, filer, messager, result).generate();
+		try {						
+			ClassGeneratorFactory.getClassGenerator(GeneratorType.POJO, procEnv, filer, messager, result).generate();
 		} catch (IOException e) {
 			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
 		}
