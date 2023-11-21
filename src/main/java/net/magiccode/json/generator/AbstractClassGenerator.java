@@ -141,33 +141,17 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 		}
 	}
 
-	/**
-	 * return flag to indicate whether current field is mapped or not.
-	 * 
-	 * @param field
-	 * @return indication whether or not the given typeElement is annotated.
-	 */
-	abstract public boolean fieldIsMapped(final Element field);
-
-	/**
-	 * return flag to indicate whether type argument is mapped or not.
-	 * 
-	 * @param typeElement the typeElement to check
-	 * @return indication whether or not the given typeElement is annotated.
-	 */
-	abstract public boolean typeIsMapped(final TypeElement typeElement);
-
 	
 	/**
 	 * to be implemented by extending classes to add fields and methods specific to the type 
 	 * of mapper being created 
 	 * 
-	 * @param incomingObjectClass
-	 * @param packageName
-	 * @param className
-	 * @param annotationInfo
-	 * @param fields
-	 * @param methods
+	 * @param incomingObjectClass - the annotated class 
+	 * @param packageName - name of the package of the class which is being create by this method belongs to.
+	 * @param className - name of the class which is being create by this method belongs to.
+	 * @param annotationInfo - {@code ElementInfo} instance of the annotated class
+	 * @param methods - {@code Map} containing {@code MethodSpec} instances for the methods to be generated contained in the class which is being processed 
+	 * @param fields - {@code List} of {@code FieldSpec} instance for the fields to be generated in the class which is being processed
 	 */
 	abstract public void createSpecificFieldsAndMethods(final ClassName incomingObjectClass, 
 												 String packageName, 
@@ -177,18 +161,18 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 												 final Map<String, MethodSpec> methods);
 	
 	/**
-	 * creates XXXMappedBy annotation for generated class
+	 * creates XXXMappedBy annotation for generated class. Needs to be implemented indifidually.
 	 * 
-	 * @param annotationInfo
-	 * @return
+	 * @param annotationInfo - {@code ElementInfo} instance of the annotated class
+	 * @return an instance of an {@code AnnotationSpec} for the MappedBy annotation in the generated class
 	 */
 	abstract public AnnotationSpec createMappedByAnnotation(ElementInfo annotationInfo);
 	
 	/**
 	 * allows to add type specific annotations to the generated class
 	 * 
-	 * @param annotationInfo
-	 * @return
+	 * @param annotationInfo - {@code ElementInfo} instance of the annotated class
+	 * @return a list of {@code AnnotationSpec} instances for annotations to be generated for the class being processed.
 	 */
 	abstract public List<AnnotationSpec>  getAdditionalAnnotationsForClass(final ElementInfo annotationInfo);
 	

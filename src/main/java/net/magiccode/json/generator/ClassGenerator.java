@@ -38,7 +38,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
-import net.magiccode.json.annotation.JSONMapped;
 import net.magiccode.json.util.StringUtil;
 
 /**
@@ -123,7 +122,7 @@ public interface ClassGenerator {
                     }
                     
                     Element argumentElement = getElementUtils().getTypeElement(argString);
-					boolean argumentIsMapped = fieldIsAnnotedWith(argumentElement, JSONMapped.class);
+					boolean argumentIsMapped = fieldIsMapped(argumentElement);
                     if (argumentIsMapped) {
 						if (argumentElement instanceof TypeElement) {
 							ClassName argumentClassName = ClassName.get((TypeElement) argumentElement); 
@@ -218,7 +217,7 @@ public interface ClassGenerator {
 	 * @param annotationInfo - information about the arguments of the <i>@JSONMapped</i> annotation
 	 * @param fieldClass - TypeName for class field shall be created in.
 	 * @param fieldIsMapped - indicates whether or not the given field is annotated
-	 * 						  with {@code JSONMapped}.
+	 * 						  
 	 * @return field specification for the create field.
 	 */
 	default FieldSpec createFieldSpec(VariableElement field, ElementInfo annotationInfo, TypeName fieldClass, boolean fieldIsMapped) {
@@ -306,6 +305,7 @@ public interface ClassGenerator {
 	
 	/**
 	 * Checks for annotation on provided field element.
+	 * 
 	 * @param field - Element for the field
 	 * @param annotationClazz - Class of the annotation
 	 * @return true if present
@@ -318,9 +318,11 @@ public interface ClassGenerator {
 	}
 
 	/**
-	 * @param annotationClazz
-	 * @param typeElement
-	 * @return
+	 * checks if the given {@code TypeElement} with the given  {@code Annotation} 
+	 * 
+	 * @param typeElement - the {@code TypeElement} to check for the annotation 
+	 * @param annotationClazz - the {@code Class} of the annotation
+	 * @return boolean which indicates whether or not the given typeElement is annotated with the given class.
 	 */
 	default boolean typeIsAnnotatedWith(TypeElement typeElement, Class<?> annotationClazz ) {
 		return (typeElement != null &&
@@ -332,16 +334,20 @@ public interface ClassGenerator {
 		
 	
 	/**
-	 * @param annotationInfo
-	 * @param type
-	 * @param fieldType
-	 * @return
+	 * checks the given if {@code TypeName} belongs to some kind of  {@code Collection},  {@code Set} or  {@code Map}
+	 * and returns the  {@code ParameterizedTypeName} of the field.
+	 *  
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param type - {@code TypeMirror} of the the field
+	 * @param fieldType - the {@code TypeName} of the field
+	 * @return the {@code ParameterizedTypeName} of the field
 	 */
 	default TypeName checkFieldTypeForCollections(ElementInfo annotationInfo, TypeMirror type, TypeName fieldType) {
 		if (type.getKind() == TypeKind.DECLARED) {			
 			List<TypeName> sourceTypeArguments = obtainTypeArguments(type);
 			// obtain type arguments
-			List<TypeName> destinationTypeArguments = collectTypes(annotationInfo, sourceTypeArguments);							
+			List<TypeName> destinationTypeArguments = collectTypes(annotationInfo, sourceTypeArguments);
+			// get {@codd TypeMirror} of types for comparison.
 			TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
 			TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
 			TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
@@ -370,8 +376,8 @@ public interface ClassGenerator {
 	/**
 	 * get type arguments from given type
 	 * 
-	 * @param type
-	 * @return
+	 * @param type the {@code TypeMirror} or the Element to be checked
+	 * @return a {@code List} of {@code TypeName} instances containing the type arguments of the given type. Empty if none are present. 
 	 */
 	default List<TypeName> obtainTypeArguments(TypeMirror type) {
 		List<? extends TypeMirror> typeArgumentMirrors = ((DeclaredType) type).getTypeArguments();
@@ -386,9 +392,9 @@ public interface ClassGenerator {
 	 * Collect types of a parametrized field and return mapped type
 	 * if any of them is annotated with with the mapping annotation itself.
 	 * 
-	 * @param annotationInfo
-	 * @param typeArguments
-	 * @return List of collected (and possibly mapped) types
+	 * @param annotationInfo - information about the annotation arguments
+	 * @param typeArguments  - {@code List} of {@code TypeName} instances containing the (source) type arguments 
+	 * @return List of collected {@code TypeName} instances containing the (possibly mapped) types.
 	 */
 	default List<TypeName> collectTypes(ElementInfo annotationInfo, 
 										 List<TypeName> typeArguments) { 
@@ -397,7 +403,7 @@ public interface ClassGenerator {
 			typeArguments.stream().forEach(argument -> {
 				String argString = argument.toString();
 		        Element argumentElement = getElementUtils().getTypeElement(argString);
-				boolean argumentIsMapped = fieldIsAnnotedWith(argumentElement, JSONMapped.class);                    
+				boolean argumentIsMapped = fieldIsMapped(argumentElement);                    
 				if (argumentElement instanceof TypeElement) {
 					// class of the argument
 					ClassName argumentClassName = ClassName.get((TypeElement) argumentElement);					
@@ -416,9 +422,9 @@ public interface ClassGenerator {
 	/**
 	 * generates the package name base on the given annotation arguments
 	 * 
-	 * @param key
-	 * @param annotationInfo
-	 * @return
+	 * @param key {@code ClassName} instance of the class to generate the package name from 
+	 * @param annotationInfo - {@code ElementInfo} instance to retrieve the given sub-package name from. 
+	 * @return package name considering the given package and sub-package name in the annotation arguments.  
 	 */
 	default String generatePackageName(ClassName key, ElementInfo annotationInfo) {
 		String packageName = annotationInfo.packageName();
@@ -434,5 +440,21 @@ public interface ClassGenerator {
 	public Types getTypeUtils();
 	public Elements getElementUtils();
 	
+	/**
+	 * return flag to indicate whether current field is mapped or not.
+	 * 
+	 * @param field which is to be checked whether it is of an annotated class or not.
+	 * @return indication whether or not the given typeElement is annotated.
+	 */
+	public boolean fieldIsMapped(final Element field);
 
+	/**
+	 * return flag to indicate whether type argument is mapped or not.
+	 * 
+	 * @param typeElement the typeElement to check
+	 * @return indication whether or not the given typeElement is annotated.
+	 */
+	public boolean typeIsMapped(final TypeElement typeElement);
+
+	
 }
