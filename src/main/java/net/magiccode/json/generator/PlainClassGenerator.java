@@ -33,7 +33,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
 import net.magiccode.json.annotation.Mapped;
-import net.magiccode.json.annotation.MapperTransient;
+import net.magiccode.json.annotation.POJOTransient;
 import net.magiccode.json.annotation.POJOMappedBy;
 
 // 
@@ -117,7 +117,7 @@ public class PlainClassGenerator extends AbstractClassGenerator {
 		
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
-		if (field.getAnnotation(MapperTransient.class) == null) {
+		if (field.getAnnotation(POJOTransient.class) == null) {
 			
 			TypeMirror type = field.asType();
 

@@ -43,9 +43,9 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
 import net.magiccode.json.annotation.JSONMappedBy;
+import net.magiccode.json.annotation.JSONRequired;
+import net.magiccode.json.annotation.JSONTransient;
 import net.magiccode.json.annotation.Mapped;
-import net.magiccode.json.annotation.MapperRequired;
-import net.magiccode.json.annotation.MapperTransient;
 import net.magiccode.json.util.StringUtil;
 
 // 
@@ -154,7 +154,7 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 		
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
-		if (field.getAnnotation(MapperTransient.class) == null && field.getAnnotation(JsonIgnore.class) == null) {
+		if (field.getAnnotation(JSONTransient.class) == null && field.getAnnotation(JsonIgnore.class) == null) {
 			// check for java.time.LocalDate or java.time.LocalDateTime
 			
 			if (fieldClass.equals(ClassName.get(LocalDateTime.class))) {
@@ -166,7 +166,7 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 			
 			AnnotationSpec.Builder jsonPropertyAnnotationBuilder = AnnotationSpec.builder(JsonProperty.class).addMember(
 					"value", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
-			if (field.getAnnotation(MapperRequired.class) != null) {
+			if (field.getAnnotation(JSONRequired.class) != null) {
 				jsonPropertyAnnotationBuilder.addMember("required", "true");
 			}
 			annotations.add(jsonPropertyAnnotationBuilder.build());

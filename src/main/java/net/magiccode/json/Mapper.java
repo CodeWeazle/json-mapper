@@ -41,6 +41,7 @@ import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 
 import net.magiccode.json.annotation.Mapped;
+import net.magiccode.json.annotation.Mappers;
 import net.magiccode.json.generator.ClassGeneratorFactory;
 import net.magiccode.json.generator.ElementInfo;
 import net.magiccode.json.generator.ElementInfo.ElementInfoBuilder;
@@ -113,13 +114,12 @@ public class Mapper extends MapperBase {
 						ClassGeneratorFactory.getClassGenerator(type, procEnv, filer, messager, annotationInfo, key, result).generate();
 					} catch (IOException e) {
 						messager.printMessage(Diagnostic.Kind.ERROR, "IOException during class generation. ("+e.getLocalizedMessage()+")");
-//						e.printStackTrace();
 					}
 			});
 		}
 		return true;
 	}
-
+	
 	/**
  	 * process @Mapped annotation
  	 * 
@@ -129,35 +129,36 @@ public class Mapper extends MapperBase {
 	private void processMappedClasses(final RoundEnvironment roundEnv, final Map<ClassName, List<ElementInfo>> result, final Class<? extends Annotation> annotationClass) {
 		
 		// retrieve elements annotated with JSONMapped
-		for (Element annotatedElement : roundEnv.getElementsAnnotatedWith( annotationClass ) ) {
+		for (Element annotatedElement : roundEnv.getElementsAnnotatedWithAny( procEnv.getElementUtils().getTypeElement(annotationClass.getCanonicalName()), 
+																			  procEnv.getElementUtils().getTypeElement(Mappers.class.getCanonicalName())))  {
 			// if the annotation is not on a class, report an error !
 			if (annotatedElement.getKind() != ElementKind.CLASS) {
-				messager.printMessage(Diagnostic.Kind.WARNING, "Only class can be annotated with "+annotatedElement.getSimpleName(),
-						annotatedElement);
+				messager.printMessage(Diagnostic.Kind.WARNING, "Only class can be annotated with "+annotatedElement.getSimpleName(), annotatedElement);
 				continue;
 			}
 			
 			TypeElement typeElement = (TypeElement) annotatedElement;
 			
-			if (annotationClass.getName().equals(Mapped.class.getName()))
-				generateClassInformation(result, annotatedElement, typeElement);
-		}
-
-	}
-
-	/**
-	 * @param result
-	 * @param annotatedElement
-	 * @param typeElement
-	 */
-	private void generateClassInformation(final Map<ClassName, List<ElementInfo>> result,
-		Element annotatedElement, TypeElement typeElement) {
-		// only execute the following code when the given element has is @Mapped
-		Mapped mapped = annotatedElement.getAnnotation(Mapped.class);
-		if (mapped != null) {
-			generateClassInformation (result, typeElement, mapped);
+		    Arrays.asList(annotatedElement.getAnnotationsByType(Mapped.class)).stream()
+				  .forEach(annotation -> {
+					  generateClassInformation (result, typeElement, annotation);												  
+				  });
 		}
 	}
+
+//	/**
+//	 * @param result
+//	 * @param annotatedElement
+//	 * @param typeElement
+//	 */
+//	private void generateClassInformation(final Map<ClassName, List<ElementInfo>> result,
+//		Element annotatedElement, TypeElement typeElement) {
+//		// only execute the following code when the given element has is @Mapped
+//		Mapped mapped = annotatedElement.getAnnotation(Mapped.class);
+//		if (mapped != null) {
+//			generateClassInformation (result, typeElement, mapped);
+//		}
+//	}
 
 	
 	/**

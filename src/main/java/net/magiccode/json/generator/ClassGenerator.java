@@ -12,7 +12,9 @@
 package net.magiccode.json.generator;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +40,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
+import net.magiccode.json.annotation.Mapped;
 import net.magiccode.json.util.StringUtil;
 
 /**
@@ -331,18 +334,14 @@ public interface ClassGenerator {
 	default boolean typeIsAnnotatedWith(final TypeElement typeElement, 
 										final Class<?> annotationClazz,
 										GeneratorType type) {
-		boolean isAnnotated =
-		  (typeElement != null &&
-				typeElement.getAnnotationMirrors().stream()
-								.anyMatch(annotation -> 
-									annotation.getAnnotationType().toString()
-		 						    		  .equals(annotationClazz.getCanonicalName())								
-		 						    && // check whether the mapped annotation of the other class has the same type
-										annotation.getElementValues().entrySet().stream()
-															.filter(elementValueEntry -> elementValueEntry.getKey().getSimpleName().toString().equals("type"))
-															.map(elementValueEntry -> elementValueEntry.getValue())
-															.anyMatch(typeEntry -> typeEntry.toString().equals(type.name()))
-								));
+
+		boolean isAnnotated = false;
+		if (annotationClazz.isAnnotation()) {			
+			isAnnotated = 
+				(typeElement != null &&
+				Arrays.asList(typeElement.getAnnotationsByType(  (Class<? extends Annotation>) annotationClazz)  ).stream()
+				.anyMatch(annotation ->  ((Mapped) annotation).type().equals(type)));
+		}
 		return isAnnotated;
 							
 	}
