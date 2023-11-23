@@ -806,9 +806,8 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 							"Method to map an instance of {@code $L} back into an instance of the annotated class {@code $L}.\n",
 							((ClassName) sourceTypeArguments.get(typeIndex)).simpleName(),
 							((ClassName) destinationTypeArguments.get(typeIndex)).simpleName())
-							.add("@param methods - List of methods to be created\n")
-							.add("@param typeArguments - {@code TypeMirror}s of the arguments of the field to be mapped.\n")
-							.add("@param typeArguments - {@code TypeName}s of the arguments of the field to be mapped.\n")
+							.add("@param e - {@code $T} instance of the type to be mapped.\n", 
+									((ClassName) sourceTypeArguments.get(typeIndex)).simpleName())
 							.add("@return populated instance of  {@code $L}.\n",
 									((ClassName) destinationTypeArguments.get(typeIndex)).simpleName())
 							.build()).addModifiers(Modifier.PRIVATE, Modifier.STATIC)

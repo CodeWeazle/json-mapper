@@ -331,6 +331,7 @@ public interface ClassGenerator {
 	 * @param type - {code GeneratorType} defining the type of generator used (POJO,JSON,XML)
 	 * @return boolean which indicates whether or not the given typeElement is annotated with the given class.
 	 */
+	@SuppressWarnings("unchecked")
 	default boolean typeIsAnnotatedWith(final TypeElement typeElement, 
 										final Class<?> annotationClazz,
 										GeneratorType type) {
