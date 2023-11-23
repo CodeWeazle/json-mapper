@@ -308,13 +308,16 @@ public interface ClassGenerator {
 	 * 
 	 * @param field - Element for the field
 	 * @param annotationClazz - Class of the annotation
+	 * @param type - the {@code GenerationType} enum value which specifies the type
+	 * 		  that needs to be checked on the {@code Mapped} annotation	 
 	 * @return true if present
 	 */
 	default boolean fieldIsAnnotedWith(final Element field,
-									   Class<?> annotationClazz) {
+									   Class<?> annotationClazz,
+									   GeneratorType type) {
 		TypeMirror fieldType = field.asType();
 		TypeElement typeElement = getElementUtils().getTypeElement(ClassName.get(fieldType).toString());		
-		return typeIsAnnotatedWith(typeElement, annotationClazz);
+		return typeIsAnnotatedWith(typeElement, annotationClazz, type);
 	}
 
 	/**
@@ -322,18 +325,29 @@ public interface ClassGenerator {
 	 * 
 	 * @param typeElement - the {@code TypeElement} to check for the annotation 
 	 * @param annotationClazz - the {@code Class} of the annotation
+	 * @param type - {code GeneratorType} defining the type of generator used (POJO,JSON,XML)
 	 * @return boolean which indicates whether or not the given typeElement is annotated with the given class.
 	 */
-	default boolean typeIsAnnotatedWith(TypeElement typeElement, Class<?> annotationClazz ) {
-		return (typeElement != null &&
+	default boolean typeIsAnnotatedWith(final TypeElement typeElement, 
+										final Class<?> annotationClazz,
+										GeneratorType type) {
+		boolean isAnnotated =
+		  (typeElement != null &&
 				typeElement.getAnnotationMirrors().stream()
-								 .anyMatch(annotation -> annotation.getAnnotationType().toString()
-										 						    .equals(annotationClazz.getCanonicalName())));
+								.anyMatch(annotation -> 
+									annotation.getAnnotationType().toString()
+		 						    		  .equals(annotationClazz.getCanonicalName())								
+		 						    && // check whether the mapped annotation of the other class has the same type
+										annotation.getElementValues().entrySet().stream()
+															.filter(elementValueEntry -> elementValueEntry.getKey().getSimpleName().toString().equals("type"))
+															.map(elementValueEntry -> elementValueEntry.getValue())
+															.anyMatch(typeEntry -> typeEntry.toString().equals(type.name()))
+								));
+		return isAnnotated;
+							
 	}
 	
-		
-	
-	/**
+	/** 
 	 * checks the given if {@code TypeName} belongs to some kind of  {@code Collection},  {@code Set} or  {@code Map}
 	 * and returns the  {@code ParameterizedTypeName} of the field.
 	 *  
@@ -396,28 +410,8 @@ public interface ClassGenerator {
 	 * @param typeArguments  - {@code List} of {@code TypeName} instances containing the (source) type arguments 
 	 * @return List of collected {@code TypeName} instances containing the (possibly mapped) types.
 	 */
-	default List<TypeName> collectTypes(ElementInfo annotationInfo, 
-										 List<TypeName> typeArguments) { 
-										 List<TypeName> types = new ArrayList<>();
-		if (typeArguments != null && typeArguments.size()>0) {
-			typeArguments.stream().forEach(argument -> {
-				String argString = argument.toString();
-		        Element argumentElement = getElementUtils().getTypeElement(argString);
-				boolean argumentIsMapped = fieldIsMapped(argumentElement);                    
-				if (argumentElement instanceof TypeElement) {
-					// class of the argument
-					ClassName argumentClassName = ClassName.get((TypeElement) argumentElement);					
-					String fcName = annotationInfo.prefix()+argumentElement.getSimpleName();
-					TypeName mappedFieldClassName = ClassName.get(generatePackageName(argumentClassName, annotationInfo), fcName);
-					if (argumentIsMapped) 
-						types.add(mappedFieldClassName);
-					else
-						types.add(argumentClassName);
-				}
-			});
-		}
-		return types;
-	}
+	public List<TypeName> collectTypes(ElementInfo annotationInfo, 
+			 						   List<TypeName> typeArguments);
 
 	/**
 	 * generates the package name base on the given annotation arguments

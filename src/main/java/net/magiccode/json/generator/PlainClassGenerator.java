@@ -32,9 +32,9 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
-import net.magiccode.json.annotation.POJOMapped;
+import net.magiccode.json.annotation.Mapped;
+import net.magiccode.json.annotation.MapperTransient;
 import net.magiccode.json.annotation.POJOMappedBy;
-import net.magiccode.json.annotation.POJOTransient;
 
 // 
 /**
@@ -53,11 +53,15 @@ public class PlainClassGenerator extends AbstractClassGenerator {
 	 * @param procEnv  - the processing environment
 	 * @param filer    - the filer
 	 * @param messager - used to output messages
-	 * @param input    - information collected beforehand based on the annotation
+  	 * @param annotationInfo {@code ElementInfo} instance describing the annotation options
 	 */
-	public PlainClassGenerator(ProcessingEnvironment procEnv, Filer filer, Messager messager,
-			Map<ClassName, List<ElementInfo>> input) {
-		super(procEnv, filer, messager, input);
+	public PlainClassGenerator(final ProcessingEnvironment procEnv, 
+							   final Filer filer, 
+							   final Messager messager,
+							   final ElementInfo annotationInfo,
+							   final ClassName annotatedClass,
+							   final Map<ClassName, List<ElementInfo>> input) {
+		super(procEnv, filer, messager, annotationInfo, annotatedClass, input);
 	}
 
 
@@ -113,7 +117,7 @@ public class PlainClassGenerator extends AbstractClassGenerator {
 		
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
-		if (field.getAnnotation(POJOTransient.class) == null) {
+		if (field.getAnnotation(MapperTransient.class) == null) {
 			
 			TypeMirror type = field.asType();
 
@@ -123,8 +127,7 @@ public class PlainClassGenerator extends AbstractClassGenerator {
 				Element fieldElement = typeUtils.asElement(fieldTypeMirror);
 				if (fieldElement instanceof TypeElement) {
 					ClassName fieldClassName = ClassName.get((TypeElement) fieldElement);
-					String fcName = annotationInfo.prefix() + fieldClassName.simpleName();
-					fieldType = ClassName.get(generatePackageName(fieldClassName, annotationInfo), fcName);
+					fieldType = getMappedTypeForClassName(fieldClassName);
 				}
 			}
 			fieldType = checkFieldTypeForCollections(annotationInfo, type, fieldType);
@@ -153,11 +156,11 @@ public class PlainClassGenerator extends AbstractClassGenerator {
 	}
 	
 	public boolean fieldIsMapped(final Element field) {
-		return fieldIsAnnotedWith(field, POJOMapped.class);
+		return fieldIsAnnotedWith(field, Mapped.class, GeneratorType.POJO);
 	}
 
 	public boolean typeIsMapped(final TypeElement typeElement) {
-		return typeIsAnnotatedWith(typeElement, POJOMapped.class);
+		return typeIsAnnotatedWith(typeElement, Mapped.class, GeneratorType.POJO);
 	}
 
 }

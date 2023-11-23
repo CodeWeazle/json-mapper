@@ -31,15 +31,17 @@ public class ClassGeneratorFactory {
 												   ProcessingEnvironment procEnv, 
 												   Filer filer, 
 												   Messager messager,
-												   Map<ClassName, List<ElementInfo>> input) {
+												   final ElementInfo annotationInfo,
+												   final ClassName annotatedClass,
+												   final Map<ClassName, List<ElementInfo>> input) {
 		
 		switch (generatorType) {
 		
 			case JSON:
-				return new JSONClassGenerator(procEnv, filer, messager, input);
+				return new JSONClassGenerator(procEnv, filer, messager, annotationInfo, annotatedClass, input);
 		
 			default:
-				return new PlainClassGenerator(procEnv, filer, messager, input);
+				return new PlainClassGenerator(procEnv, filer, messager, annotationInfo, annotatedClass, input);
 		
 		}
 	}

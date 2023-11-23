@@ -35,6 +35,12 @@ import lombok.experimental.Accessors;
 @Setter
 public class ElementInfo {
 	
+	/**
+	 * type of generator to use for class generation.
+	 * These can be POJO,JSON or XML.
+	 */
+	private GeneratorType type;
+	
 	/** 
 	 * store name of annotated class
 	 */

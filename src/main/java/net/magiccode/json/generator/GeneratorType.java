@@ -13,7 +13,8 @@
 package net.magiccode.json.generator;
 
 /**
- * 
+ * possible types of generator to be used for
+ * class generation
  */
 public enum GeneratorType {
 

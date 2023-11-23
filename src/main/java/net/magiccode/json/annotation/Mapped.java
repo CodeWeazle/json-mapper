@@ -6,14 +6,23 @@ package net.magiccode.json.annotation;
 import static java.lang.annotation.ElementType.TYPE;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Target;
+
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import net.magiccode.json.generator.GeneratorType;
 
 @Documented
 @Target(TYPE)
 /**
- * Any class annotated with POJOMapped will generate a plain copy with 
- * all fields of the original class.
+ * Any class annotated with Mapped will generate a copy with 
+ * all fields of the original class annotated with Jackson annotations
+ * for easy json processing.
  * 
+ *  json annotated instances are created by the use of the <i>of()</i> method of the 
+ *  generated class, providing an instance of the annotated class as an argument.
+ *  
  *  To create an instance of the annotated class from an instance of the generated
  *  class, the <i>to()</i> method can be used.
  *  
@@ -21,7 +30,17 @@ import java.lang.annotation.Target;
  *  with arguments, which basically functions just like an all arguments constructor.
  *  
  */
-public @interface POJOMapped {
+@Repeatable(Mappers.class)
+public @interface Mapped {
+	
+	/**
+	 * type of generator to be used for the mapped class. 
+	 * defaults to GeneratorType.POJO, also available GeneratorType.JSON
+	 * and GeneratorType.XML
+	 *  
+	 * @return the selected generator types
+	 */
+	GeneratorType type() default GeneratorType.POJO;
 	
 	/**
 	 * Generates setters which return this. Defaults to <i>true</i>
@@ -40,9 +59,9 @@ public @interface POJOMapped {
 	/**
 	 * Adds a prefix to the name of the generated class. Defaults to "JSON"
 	 * 
-	 * @return  as set or "JSON" (default)
+	 * @return  as set or the uppercase type (POJO,JSON,XML)
 	 */
-	String prefix() default "Plain";
+	String prefix() default "";
 	
 	/**
 	 * Defines the name of the packacke for the generated class. If no packageName is given, this defaults to the package of the annotated class.
@@ -54,9 +73,17 @@ public @interface POJOMapped {
 	/**
 	 * Defines the name for a subpackage added to the default if packageName is not specified.
 	 * 
-	 * @return as set or "json" (default)
+	 * @return as set or the lowercase type (pojo,json,xml)
 	 */
-	String subpackageName() default "dto";
+	String subpackageName() default "";
+	
+	/**
+	 * Generated classes are annotated with @JsonInclude. This defaults to ALWAYS, but can be specified otherwise by using the jsonInclude argument.
+	 * (ALWAYS, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS)
+	 * 
+	 * @return as set or Include.ALWAYS (default)
+	 */
+	Include jsonInclude() default Include.ALWAYS;
 	
 	/**
 	 * Setting useLombok to true generates much less code, because getters and setters can be replace by lombok annotations, just as the constructor(s), toString etc.
@@ -86,5 +113,20 @@ public @interface POJOMapped {
 	 * @return as set or true (default)
 	 */
 	boolean inheritFields() default true;
+	
+	/**
+	 * LocalDate fields are annotated with {@code @JsonFormat} in the generated class. This option allows to specify a custom format 
+	 * for a date pattern to customise the JSON output. Default pattern is "yyyy-MM-dd"
+	 * 
+	 * @return as set or true (default)
+	 */
+	String datePattern() default  "yyyy-MM-dd";
+
+	/**
+	 * LocalDateTime fields are annotated with {@code @JsonFormat} in the generated class. This option allows to specify a custom format 
+	 * for a date pattern to customise the JSON output. Default pattern is "yyyy-MM-dd HH:mm:ss" 
+	 */
+	String dateTimePattern() default  "yyyy-MM-dd HH:mm:ss";
+	
 	
 }

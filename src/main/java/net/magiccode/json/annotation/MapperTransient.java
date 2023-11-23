@@ -13,10 +13,9 @@ import java.lang.annotation.Target;
 /**
  * For classes having a {@code @JSONMapped} annotation, 
  * this marker annotation indicates that the annotated
- * field will be generated with a {@code @JsonProperty}
- * annotation that has an additiona argument<i>required=true</i> 
- * in the generated class.
+ * field must be annotated with {@code @JsonIgnore} in the 
+ * generated class
  */
-public @interface JSONRequired {
+public @interface MapperTransient {
 
 }
