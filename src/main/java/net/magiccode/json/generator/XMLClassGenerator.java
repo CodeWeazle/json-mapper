@@ -106,14 +106,14 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 	 * @return List of annotations {@code AnnotationSpec} instances or null.
 	 */
 	
-	public List<AnnotationSpec>  getAdditionalAnnotationsForClass(final ElementInfo annotationInfo) {
-		List<AnnotationSpec> annotations = new ArrayList<>(); 
+	public List<AnnotationSpec> getAdditionalAnnotationsForClass(final ElementInfo annotationInfo) {
+		List<AnnotationSpec> annotations =
 				List.of(
 				AnnotationSpec.builder(XmlRootElement.class)
-							  .addMember("localName", "$L", StringUtil.camelToSnake(annotationInfo.element().getSimpleName().toString()) )
+							  .addMember("name", "$S", StringUtil.camelToSnake( annotatedClass.simpleName() ) )
 							  .build(),
 				AnnotationSpec.builder(XmlAccessorType.class)
-							  .addMember("value", "$L", XmlAccessType.FIELD.name() )
+							  .addMember("value", "$T.$L", XmlAccessType.class, XmlAccessType.FIELD.name())
 							  .build());
 		return annotations;
 	}
@@ -134,9 +134,8 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 				.addStatement("mapper.registerModule(new $T())", JaxbAnnotationModule.class)
 				
 				.addStatement("mapper.findAndRegisterModules()")
-				.addStatement("String value = this.getClass().getName()")
+				.addStatement("String value = this.getClass().getName()\n")
 				.beginControlFlow("try")
-				
 				.addStatement("value += mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this)")
 				.endControlFlow().beginControlFlow("catch ($T e)", JsonProcessingException.class)
 				.addStatement("e.printStackTrace()").endControlFlow().addStatement("return value")

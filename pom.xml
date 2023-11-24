@@ -15,7 +15,8 @@
 		<lombok.version>1.18.30</lombok.version>
 		<javapoet.version>1.13.0</javapoet.version>
 		<auto-service.version>1.1.1</auto-service.version>
-
+		<jaxb-api.version>2.3.1</jaxb-api.version>
+		<jaxb-runtime.version>2.3.2</jaxb-runtime.version>
 		<delombok.output>target/delombok</delombok.output>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -67,7 +68,17 @@
 			<version>${jackson.version}</version>
 		</dependency>
 
-		
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>${jaxb-api.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<version>${jaxb-runtime.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

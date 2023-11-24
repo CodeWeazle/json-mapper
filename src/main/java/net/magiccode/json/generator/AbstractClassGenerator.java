@@ -62,7 +62,7 @@ import net.magiccode.json.util.StringUtil;
 public abstract class AbstractClassGenerator implements ClassGenerator {
 
 	protected ElementInfo annotationInfo;
-
+	protected ClassName annotatedClass;
 	protected Filer filer;
 	protected Messager messager;
 	protected ProcessingEnvironment procEnv;
@@ -83,7 +83,7 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 			final ElementInfo annotationInfo, final ClassName annotatedClass,
 			final Map<ClassName, List<ElementInfo>> input) {
 		this.filer = filer;
-
+		this.annotatedClass = annotatedClass;
 		this.annotationInfo = annotationInfo;
 		this.messager = messager;
 		this.procEnv = procEnv;
