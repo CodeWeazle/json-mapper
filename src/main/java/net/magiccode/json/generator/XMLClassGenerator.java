@@ -28,6 +28,7 @@ import javax.lang.model.util.Types;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -134,7 +135,7 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 				.addStatement("mapper.registerModule(new $T())", JaxbAnnotationModule.class)
 				
 				.addStatement("mapper.findAndRegisterModules()")
-				.addStatement("String value = this.getClass().getName()\n")
+				.addStatement("String value = this.getClass().getName()+\"\\n\"")
 				.beginControlFlow("try")
 				.addStatement("value += mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this)")
 				.endControlFlow().beginControlFlow("catch ($T e)", JsonProcessingException.class)
@@ -173,9 +174,15 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 //			if (fieldClass.equals(ClassName.get(LocalDate.class))) {
 //				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.datePattern())).build());
 //			}
+			AnnotationSpec.Builder xmlPropertyAnnotationBuilder;
+			if (fieldClass.isPrimitive()) {
+				xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlAttribute.class).addMember(
+						"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
+			} else {
+				xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlElement.class).addMember(
+						"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
+			}
 			
-			AnnotationSpec.Builder xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlAttribute.class).addMember(
-					"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
 			if (field.getAnnotation(XMLRequired.class) != null) {
 				xmlPropertyAnnotationBuilder.addMember("required", "true");
 			}

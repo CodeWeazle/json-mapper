@@ -36,6 +36,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.MethodSpec.Builder;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
@@ -76,12 +77,16 @@ public interface ClassGenerator {
 	/**
 	 * create no-args constructor
 	 * 
+	 * @param annotationInfo - information about the annotation arguments
 	 * @param methods - maps with MethodSpec definitions for methods to be created
 	 */
-	default void createNoArgsConstructor(Map<String, MethodSpec> methods) {
-		methods.put("_constructor", MethodSpec.constructorBuilder()
-							  .addModifiers(Modifier.PUBLIC)
-							  .build());
+	default void createNoArgsConstructor(ElementInfo annotationInfo,
+										 Map<String, MethodSpec> methods) {
+		Builder constructorBuilder = MethodSpec.constructorBuilder();
+				constructorBuilder.addModifiers(Modifier.PUBLIC);
+		if (annotationInfo.superclass() != null)
+				constructorBuilder.addStatement("super()");
+		methods.put("_constructor", constructorBuilder.build());
 	}
 	
 	/**
