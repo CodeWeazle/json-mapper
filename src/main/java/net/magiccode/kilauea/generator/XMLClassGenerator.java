@@ -9,7 +9,7 @@
  * 
  * Filename: XMLClassGenerator.java
  */
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +43,11 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
-import net.magiccode.json.annotation.Mapped;
-import net.magiccode.json.annotation.XMLMappedBy;
-import net.magiccode.json.annotation.XMLRequired;
-import net.magiccode.json.annotation.XMLTransient;
-import net.magiccode.json.util.StringUtil;
+import net.magiccode.kilauea.annotation.Mapped;
+import net.magiccode.kilauea.annotation.XMLMappedBy;
+import net.magiccode.kilauea.annotation.XMLRequired;
+import net.magiccode.kilauea.annotation.XMLTransient;
+import net.magiccode.kilauea.util.StringUtil;
 
 // 
 /**

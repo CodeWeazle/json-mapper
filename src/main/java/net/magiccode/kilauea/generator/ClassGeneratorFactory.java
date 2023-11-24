@@ -10,7 +10,7 @@
  * Filename: ClassGeneratorFactory.java
  */
 
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.util.List;
 import java.util.Map;

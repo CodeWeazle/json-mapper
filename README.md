@@ -48,19 +48,19 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 
 ### Gradle
 ```
-implementation group: 'net.magiccode.json', name: 'kilauea', version: '0.0.9'
+implementation group: 'net.magiccode.kilauea', name: 'kilauea', version: '0.0.9'
 
 ...
 dependencies {
-  compile("net.magiccode.json:kilauea:0.0.9")
-  annotationProcessor("net.magiccode.json:kilauea:0.0.9")
+  compile("net.magiccode.kilauea:kilauea:0.0.9")
+  annotationProcessor("net.magiccode.kilauea:kilauea:0.0.9")
   ...
 }
 ```
 
 ### Others
 
-For other build systems please consult the current [maven-central site](https://central.sonatype.com/artifact/net.magiccode.json/kilauea)
+For other build systems please consult the current [maven-central site](https://central.sonatype.com/artifact/net.magiccode.kilauea/kilauea)
 
 
 ## Annotations

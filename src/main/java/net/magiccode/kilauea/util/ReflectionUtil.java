@@ -9,7 +9,7 @@
  * 
  * Filename: ReflectionUtil.java
  */
-package net.magiccode.json.util;
+package net.magiccode.kilauea.util;
 
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;

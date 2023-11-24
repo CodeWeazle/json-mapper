@@ -11,7 +11,7 @@
  * 
  * Filename: ClassCompiler.java
  */
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.io.File;
 import java.io.IOException;

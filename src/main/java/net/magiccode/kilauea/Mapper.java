@@ -9,7 +9,7 @@
  * 
  * Filename: JsonMapper.java
  */
-package net.magiccode.json;
+package net.magiccode.kilauea;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -40,13 +40,13 @@ import javax.tools.Diagnostic;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 
-import net.magiccode.json.annotation.Mapped;
-import net.magiccode.json.annotation.Mappers;
-import net.magiccode.json.generator.ClassGeneratorFactory;
-import net.magiccode.json.generator.ElementInfo;
-import net.magiccode.json.generator.ElementInfo.ElementInfoBuilder;
-import net.magiccode.json.generator.GeneratorType;
-import net.magiccode.json.util.StringUtil;
+import net.magiccode.kilauea.annotation.Mapped;
+import net.magiccode.kilauea.annotation.Mappers;
+import net.magiccode.kilauea.generator.ClassGeneratorFactory;
+import net.magiccode.kilauea.generator.ElementInfo;
+import net.magiccode.kilauea.generator.GeneratorType;
+import net.magiccode.kilauea.generator.ElementInfo.ElementInfoBuilder;
+import net.magiccode.kilauea.util.StringUtil;
 
 /**
  * Annotation processor with the purpose to generate Jackson annotated Java code for JSON DTOs.
@@ -55,7 +55,7 @@ import net.magiccode.json.util.StringUtil;
  *  This provides methods (of/to) to map between populated instances of the annotated and the 
  *  generated class.
  */
-@SupportedAnnotationTypes("net.magiccode.json.annotation.*")
+@SupportedAnnotationTypes("net.magiccode.kilauea.annotation.*")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public class Mapper extends MapperBase {

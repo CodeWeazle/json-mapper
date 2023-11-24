@@ -1,7 +1,7 @@
 /**
  * 
  */
-package net.magiccode.json.annotation;
+package net.magiccode.kilauea.annotation;
 
 import static java.lang.annotation.ElementType.TYPE;
 
@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import net.magiccode.json.generator.GeneratorType;
+import net.magiccode.kilauea.generator.GeneratorType;
 
 @Documented
 @Target(TYPE)

@@ -9,7 +9,7 @@
  * 
  * Filename: MapperBase.java
  */
-package net.magiccode.json;
+package net.magiccode.kilauea;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.lang.model.element.Element;

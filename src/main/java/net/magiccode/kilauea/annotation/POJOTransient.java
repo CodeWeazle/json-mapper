@@ -1,7 +1,7 @@
 /**
  * 
  */
-package net.magiccode.json.annotation;
+package net.magiccode.kilauea.annotation;
 
 import static java.lang.annotation.ElementType.FIELD;
 
@@ -16,6 +16,6 @@ import java.lang.annotation.Target;
  * field must be annotated with {@code @JsonIgnore} in the 
  * generated class
  */
-public @interface JSONTransient {
+public @interface POJOTransient {
 
 }

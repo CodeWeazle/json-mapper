@@ -10,7 +10,7 @@
  * Filename: GeneratorType.java
  */
 
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 /**
  * possible types of generator to be used for

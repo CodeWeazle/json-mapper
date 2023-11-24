@@ -9,7 +9,7 @@
  * 
  * Filename: JSONClassGenerator.java
  */
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +32,9 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
-import net.magiccode.json.annotation.Mapped;
-import net.magiccode.json.annotation.POJOTransient;
-import net.magiccode.json.annotation.POJOMappedBy;
+import net.magiccode.kilauea.annotation.Mapped;
+import net.magiccode.kilauea.annotation.POJOMappedBy;
+import net.magiccode.kilauea.annotation.POJOTransient;
 
 // 
 /**

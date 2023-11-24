@@ -9,7 +9,7 @@
  * 
  * Filename: ElementInfo.java
  */
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.util.ArrayList;
 import java.util.List;

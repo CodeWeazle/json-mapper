@@ -9,7 +9,7 @@
  * 
  * Filename: AbstractClassGenerator.java
  */
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -52,8 +52,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
-import net.magiccode.json.util.ReflectionUtil;
-import net.magiccode.json.util.StringUtil;
+import net.magiccode.kilauea.util.ReflectionUtil;
+import net.magiccode.kilauea.util.StringUtil;
 
 // 
 /**

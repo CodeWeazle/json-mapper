@@ -1,7 +1,7 @@
 /**
  * 
  */
-package net.magiccode.json.annotation;
+package net.magiccode.kilauea.annotation;
 
 import static java.lang.annotation.ElementType.FIELD;
 
@@ -17,6 +17,6 @@ import java.lang.annotation.Target;
  * annotation that has an additiona argument<i>required=true</i> 
  * in the generated class.
  */
-public @interface JSONRequired {
+public @interface XMLRequired {
 
 }

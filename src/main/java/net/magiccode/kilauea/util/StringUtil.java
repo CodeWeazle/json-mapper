@@ -9,7 +9,7 @@
  * 
  * Filename: StringUtil.java
  */
-package net.magiccode.json.util;
+package net.magiccode.kilauea.util;
 
 import java.util.Arrays;
 

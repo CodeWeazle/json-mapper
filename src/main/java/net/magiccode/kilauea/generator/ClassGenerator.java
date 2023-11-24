@@ -9,7 +9,7 @@
  * 
  * Filename: ClassGenerator.java
  */
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -37,12 +37,13 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.MethodSpec.Builder;
+
+import net.magiccode.kilauea.annotation.Mapped;
+import net.magiccode.kilauea.util.StringUtil;
+
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-
-import net.magiccode.json.annotation.Mapped;
-import net.magiccode.json.util.StringUtil;
 
 /**
  * class generator interface for JsonMapper with some helpful 
