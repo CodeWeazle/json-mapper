@@ -807,7 +807,7 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 							((ClassName) sourceTypeArguments.get(typeIndex)).simpleName(),
 							((ClassName) destinationTypeArguments.get(typeIndex)).simpleName())
 							.add("@param e - {@code $T} instance of the type to be mapped.\n", 
-									((ClassName) sourceTypeArguments.get(typeIndex)).simpleName())
+									((ClassName) sourceTypeArguments.get(typeIndex)))
 							.add("@return populated instance of  {@code $L}.\n",
 									((ClassName) destinationTypeArguments.get(typeIndex)).simpleName())
 							.build()).addModifiers(Modifier.PRIVATE, Modifier.STATIC)
