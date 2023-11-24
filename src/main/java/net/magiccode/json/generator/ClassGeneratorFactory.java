@@ -39,7 +39,10 @@ public class ClassGeneratorFactory {
 		
 			case JSON:
 				return new JSONClassGenerator(procEnv, filer, messager, annotationInfo, annotatedClass, input);
-		
+				
+			case XML:
+				return new XMLClassGenerator(procEnv, filer, messager, annotationInfo, annotatedClass, input);
+	
 			default:
 				return new PlainClassGenerator(procEnv, filer, messager, annotationInfo, annotatedClass, input);
 		

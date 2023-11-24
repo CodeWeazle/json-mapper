@@ -7,12 +7,10 @@
  * 
  * @author CodeWeazle (2023)
  * 
- * Filename: JSONClassGenerator.java
+ * Filename: XMLClassGenerator.java
  */
 package net.magiccode.json.generator;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,14 +25,16 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -42,32 +42,32 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
-import net.magiccode.json.annotation.JSONMappedBy;
-import net.magiccode.json.annotation.JSONRequired;
-import net.magiccode.json.annotation.JSONTransient;
 import net.magiccode.json.annotation.Mapped;
+import net.magiccode.json.annotation.XMLMappedBy;
+import net.magiccode.json.annotation.XMLRequired;
+import net.magiccode.json.annotation.XMLTransient;
 import net.magiccode.json.util.StringUtil;
 
 // 
 /**
- * Generates JSON annotated mapping class for a given java class.
+ * Generates XML annotated mapping class for a given java class.
  * 
  * The generated class provides all the fields of the annotated class as well as methods to 
  * map between instances of these two classes seamlessly. (to/of methods)
  */
-public class JSONClassGenerator extends AbstractClassGenerator {
+public class XMLClassGenerator extends AbstractClassGenerator {
 
 	/**
-	 * The purpose of this class is to generate JSON annotated Java code using the
+	 * The purpose of this class is to generate XML annotated Java code using the
 	 * JavaPoet framework. See documentation for more details about
-	 * <i>Mapped(type=GeneratorType.JSON)</i>
+	 * <i>Mapped(type=GeneratorType.XML)</i>
 	 * 
 	 * @param procEnv  - the processing environment
 	 * @param filer    - the filer
 	 * @param messager - used to output messages
-	 * @param annotationInfo - {@code ElementInfo} instance containing information about the {@code @Mapped(type=GeneratorType.JSON)} annotation
+	 * @param annotationInfo - {@code ElementInfo} instance containing information about the {@code @Mapped(type=GeneratorType.XML)} annotation
 	 */
-	public JSONClassGenerator(final ProcessingEnvironment procEnv, 
+	public XMLClassGenerator(final ProcessingEnvironment procEnv, 
 							  final Filer filer, 
 							  final Messager messager,
 							  final ElementInfo annotationInfo,
@@ -79,13 +79,13 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 
 	
 	/**
-	 * create JSON specific methods
+	 * create XML specific methods
 	 */
 	@Override
 	public
 	void createSpecificFieldsAndMethods(ClassName incomingObjectClass, String packageName, String className,
 			ElementInfo annotationInfo, List<FieldSpec> fields, Map<String, MethodSpec> methods) {
-		createToJSONString(methods);		
+		createToXMLString(methods);		
 	}
 	
 	/**
@@ -95,21 +95,26 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 	 * @return annotation {@code AnnotationSpec} instance of created mapped-by annotation
 	 */
 	public AnnotationSpec createMappedByAnnotation(final ElementInfo annotationInfo) {
-		return AnnotationSpec.builder(JSONMappedBy.class)
+		return AnnotationSpec.builder(XMLMappedBy.class)
 				.addMember("mappedClass", "$T.class", ClassName.get(annotationInfo.element())).build();
 	}
 	
 	/**
-	 * annotations specifically for the type JSON
+	 * annotations specifically for the type XML
 	 *
 	 * @param annotationInfo {@code ElementInfo} instance describing the annotation options
 	 * @return List of annotations {@code AnnotationSpec} instances or null.
 	 */
 	
 	public List<AnnotationSpec>  getAdditionalAnnotationsForClass(final ElementInfo annotationInfo) {
-		List<AnnotationSpec> annotations = List.of(
-				AnnotationSpec.builder(JsonInclude.class)
-					.addMember("value", "$T.$L", Include.class, annotationInfo.jsonInclude().name()).build());
+		List<AnnotationSpec> annotations = new ArrayList<>(); 
+				List.of(
+				AnnotationSpec.builder(XmlRootElement.class)
+							  .addMember("localName", "$L", StringUtil.camelToSnake(annotationInfo.element().getSimpleName().toString()) )
+							  .build(),
+				AnnotationSpec.builder(XmlAccessorType.class)
+							  .addMember("value", "$L", XmlAccessType.FIELD.name() )
+							  .build());
 		return annotations;
 	}
 	
@@ -120,28 +125,32 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 	 * @param methods - Map containing the methods to be created. Key is the name of the method, value a MethodSpec instance
 	 * 		
 	 */
-	private void createToJSONString(final Map<String, MethodSpec> methods) {
-		// create toJSONString method
-		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toJSONString").addModifiers(Modifier.PUBLIC)
-				.addJavadoc(CodeBlock.builder().add("provides a formatted JSON string with all fields\n")
+	private void createToXMLString(final Map<String, MethodSpec> methods) {
+		// create toXMLString method
+		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toXMLString").addModifiers(Modifier.PUBLIC)
+				.addJavadoc(CodeBlock.builder().add("provides a formatted XML string with all fields\n")
 						.add("and their current values.\n").build())
-				.addStatement("$T mapper = new $T()", ObjectMapper.class, ObjectMapper.class)
+				.addStatement("$T mapper = new $T()", ObjectMapper.class, XmlMapper.class)
+				.addStatement("mapper.registerModule(new $T())", JaxbAnnotationModule.class)
+				
 				.addStatement("mapper.findAndRegisterModules()")
-				.addStatement("String value = this.getClass().getName()").beginControlFlow("try")
+				.addStatement("String value = this.getClass().getName()")
+				.beginControlFlow("try")
+				
 				.addStatement("value += mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this)")
 				.endControlFlow().beginControlFlow("catch ($T e)", JsonProcessingException.class)
 				.addStatement("e.printStackTrace()").endControlFlow().addStatement("return value")
 				.returns(ClassName.get(String.class));
-		methods.put("toJSONString",  toStringBuilder.build());
+		methods.put("toXMLString",  toStringBuilder.build());
 	}
 
 	/**
 	 * create field
 	 * 
 	 * @param field         - VariableElement representation of field to be created
-	 * @param annotationInfo - {@code ElementInfo} instance containing information about the {@code @Mapped(type=GeneratorType.JSON)} annotation
+	 * @param annotationInfo - {@code ElementInfo} instance containing information about the {@code @Mapped(type=GeneratorType.XML)} annotation
 	 * @param fieldClass    - TypeName for class field shall be created in.
-	 * @param fieldIsMapped - indicates whether or not the given field is annotated  with {@code Mapped(type=GeneratorType.JSON)}.
+	 * @param fieldIsMapped - indicates whether or not the given field is annotated  with {@code Mapped(type=GeneratorType.XML)}.
 	 * @return field specification for the create field.
 	 */
 	@Override
@@ -154,22 +163,24 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 		
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
-		if (field.getAnnotation(JSONTransient.class) == null && field.getAnnotation(JsonIgnore.class) == null) {
+		if (field.getAnnotation(XMLTransient.class) == null 
+				//&& field.getAnnotation(XmlTransient.class) == null
+				) {
 			// check for java.time.LocalDate or java.time.LocalDateTime
 			
-			if (fieldClass.equals(ClassName.get(LocalDateTime.class))) {
-				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.dateTimePattern())).build());				
-			}
-			if (fieldClass.equals(ClassName.get(LocalDate.class))) {
-				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.datePattern())).build());
-			}
+//			if (fieldClass.equals(ClassName.get(LocalDateTime.class))) {
+//				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.dateTimePattern())).build());				
+//			}
+//			if (fieldClass.equals(ClassName.get(LocalDate.class))) {
+//				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.datePattern())).build());
+//			}
 			
-			AnnotationSpec.Builder jsonPropertyAnnotationBuilder = AnnotationSpec.builder(JsonProperty.class).addMember(
-					"value", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
-			if (field.getAnnotation(JSONRequired.class) != null) {
-				jsonPropertyAnnotationBuilder.addMember("required", "true");
+			AnnotationSpec.Builder xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlAttribute.class).addMember(
+					"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
+			if (field.getAnnotation(XMLRequired.class) != null) {
+				xmlPropertyAnnotationBuilder.addMember("required", "true");
 			}
-			annotations.add(jsonPropertyAnnotationBuilder.build());
+			annotations.add(xmlPropertyAnnotationBuilder.build());
 			
 			TypeMirror type = field.asType();
 
@@ -192,7 +203,7 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 			
 		} else {
 			fieldspec = FieldSpec.builder(fieldClass, fieldName, Modifier.PRIVATE)
-								 .addAnnotation(JsonIgnore.class)
+								 .addAnnotation(XmlTransient.class)
 								 .build();
 		}
 		return fieldspec;
@@ -209,11 +220,11 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 	}
 	
 	public boolean fieldIsMapped(final Element field) {
-		return fieldIsAnnotedWith(field, Mapped.class, GeneratorType.JSON);
+		return fieldIsAnnotedWith(field, Mapped.class, GeneratorType.XML);
 	}
 
 	public boolean typeIsMapped(final TypeElement typeElement) {
-		return typeIsAnnotatedWith(typeElement, Mapped.class, GeneratorType.JSON);
+		return typeIsAnnotatedWith(typeElement, Mapped.class, GeneratorType.XML);
 	}
 
 }

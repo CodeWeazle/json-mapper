@@ -10,7 +10,7 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<jackson.version>2.15.0</jackson.version>
+		<jackson.version>2.16.0</jackson.version>
 		<log4j.version>2.21.1</log4j.version>
 		<lombok.version>1.18.30</lombok.version>
 		<javapoet.version>1.13.0</javapoet.version>
@@ -40,6 +40,12 @@
 			<version>${jackson.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+
 		<!-- Java 8 date/time support according to jsr310 -->
 		<dependency>
 		    <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -53,6 +59,14 @@
 		    <artifactId>jackson-datatype-jdk8</artifactId>
 		    <version>${jackson.version}</version>
 		</dependency>
+		
+		<!-- allows usage of JaxB annotations -->		
+		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-jaxb-annotations</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+
 		
 		<dependency>
 			<groupId>org.projectlombok</groupId>
