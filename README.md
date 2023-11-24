@@ -1,6 +1,6 @@
-# json-mapper
+# kilauea
 
-*json-mapper* implements an annotation processor to generate Java classes with Jackson annotations with some convenient creation/mapping functions.
+*kilauea* implements an annotation processor to generate Java classes with Jackson annotations with some convenient creation/mapping functions.
 
 ## Usage
 
@@ -14,7 +14,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 	  ...
       <dependency>
 	 	<groupId>net.magiccode.json</groupId>
-		<artifactId>json-mapper</artifactId>
+		<artifactId>kilauea</artifactId>
 		<version>0.0.9</version>
       </dependency>
       ...
@@ -33,7 +33,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 						...
 						<path>
 							<groupId>net.magiccode.json</groupId>
-							<artifactId>json-mapper</artifactId>
+							<artifactId>kilauea</artifactId>
 							<version>0.0.9</version>
 						</path>
 						...
@@ -48,19 +48,19 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 
 ### Gradle
 ```
-implementation group: 'net.magiccode.json', name: 'json-mapper', version: '0.0.9'
+implementation group: 'net.magiccode.json', name: 'kilauea', version: '0.0.9'
 
 ...
 dependencies {
-  compile("net.magiccode.json:json-mapper:0.0.9")
-  annotationProcessor("net.magiccode.json:json-mapper:0.0.9")
+  compile("net.magiccode.json:kilauea:0.0.9")
+  annotationProcessor("net.magiccode.json:kilauea:0.0.9")
   ...
 }
 ```
 
 ### Others
 
-For other build systems please consult the current [maven-central site](https://central.sonatype.com/artifact/net.magiccode.json/json-mapper)
+For other build systems please consult the current [maven-central site](https://central.sonatype.com/artifact/net.magiccode.json/kilauea)
 
 
 ## Annotations
@@ -351,7 +351,7 @@ net.magiccode.lazy.json.JSONExampleCode04{
 
 ## Libraries
 
-At the time being, the dependencies used by *json-mapper* are
+At the time being, the dependencies used by *kilauea* are
 
 ```
 	<properties>

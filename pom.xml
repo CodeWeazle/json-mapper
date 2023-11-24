@@ -3,10 +3,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.magiccode.json</groupId>
-	<artifactId>json-mapper</artifactId>
+	<artifactId>kilauea</artifactId>
 	<version>0.0.10-SNAPSHOT</version>
 	<description>Provides annotations for entity-json mapping dto generation</description>
-	<url>https://github.com/CodeWeazle/json-mapper</url>
+	<url>https://github.com/CodeWeazle/kilauea</url>
 
 	<properties>
 		<java.version>17</java.version>
@@ -247,14 +247,14 @@
 			<name>Volker Karlmeier</name>
 			<email>volker@magiccode.net</email>
 			<timezone>Europe/London</timezone>
-			<url>https://github.com/CodeWeazle/json-mapper</url>
+			<url>https://github.com/CodeWeazle/kilauea</url>
 		</developer>
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://github.com/CodeWeazle/json-mapper.git</connection>
-		<developerConnection>scm:git:ssh://github.com:CodeWeazle/json-mapper.git</developerConnection>
-		<url>https://maven.pkg.github.com/CodeWeazle/json-mapper</url>
+		<connection>scm:git:git://github.com/CodeWeazle/kilauea.git</connection>
+		<developerConnection>scm:git:ssh://github.com:CodeWeazle/kilauea.git</developerConnection>
+		<url>https://maven.pkg.github.com/CodeWeazle/kilauea</url>
 	</scm>
 
 </project>

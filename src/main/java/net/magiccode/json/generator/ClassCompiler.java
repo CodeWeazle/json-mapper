@@ -1,11 +1,11 @@
 /**
- * json-mapper
+ * kilauea
  * 
  * ClassCompiler compiles given java file into class file.
  *
- * Published under Apache-2.0 license (https://github.com/CodeWeazle/json-mapper/blob/main/LICENSE)
+ * Published under Apache-2.0 license (https://github.com/CodeWeazle/kilauea/blob/main/LICENSE)
  * 
- * Code: https://github.com/CodeWeazle/json-mapper
+ * Code: https://github.com/CodeWeazle/kilauea
  * 
  * @author CodeWeazle (2023)
  * 
