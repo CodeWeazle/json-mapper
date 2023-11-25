@@ -11,7 +11,6 @@
  */
 package net.magiccode.kilauea.generator;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -170,22 +169,13 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 		
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
-		if (field.getAnnotation(XMLTransient.class) == null 
-				//&& field.getAnnotation(XmlTransient.class) == null
-				) {
-			// check for java.time.LocalDate or java.time.LocalDateTime
-			
-//			if (fieldClass.equals(ClassName.get(LocalDateTime.class))) {
-//				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.dateTimePattern())).build());				
-//			}
-//			if (fieldClass.equals(ClassName.get(LocalDate.class))) {
-//				annotations.add(AnnotationSpec.builder(JsonFormat.class).addMember("pattern", StringUtil.quote(annotationInfo.datePattern())).build());
-//			}
+		if (field.getAnnotation(XMLTransient.class) == null) {
 			AnnotationSpec.Builder xmlPropertyAnnotationBuilder;
-			if (fieldClass.isPrimitive()) {
+			// primitive types (and types in java.lang) are mapped as attributes
+			if (fieldClass.isPrimitive() || field.asType().toString().startsWith("java.lang") ) {
 				xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlAttribute.class).addMember(
 						"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
-			} else {
+			} else { // others as elements
 				xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlElement.class).addMember(
 						"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
 			}
@@ -241,7 +231,7 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 	 * retrieve namespace entry of {@code Mapped} annotation of field mapped 
 	 * with {@code Mappde(type=GeneratorType.XML)}
 	 * 
-	 * @param field the field to check for 
+	 * @param field the field to check for as a {@code VariableElement}
 	 * @return the namespace of the class of the field.
 	 */
 	private String getMappingAnnotationNamespace(VariableElement field) {
@@ -257,8 +247,6 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 		}
 		return nameSpace;		
 	}
-	
-	
 	
 	@Override
 	public Types getTypeUtils() {
