@@ -93,6 +93,13 @@ private Double requiredValue;
 ```
 in the generated class.
 
+### @XMLNamespace
+
+On field level the namespace can be overwritten by the use of the **@XMLNamespace** annotation, providing the namespace as the value.
+```
+@NMLNamespace("urn:example:fiel-namespace")
+...
+```
 
 ## Use of generated classes
 
