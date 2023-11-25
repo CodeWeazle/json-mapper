@@ -37,7 +37,7 @@ Some arguments can be provided to have some influence on the code generation. Op
 |interfaces| |Comma separated list of fully qualified name of the interfaces that the generated class will implement.|
 |inheritFields|**true**, false|Defines whether or not fields from the super-class hierarchy of the annotated class should be generated. Default is **true**|
 
-Annotations only applicable for *GeneratorType.JSON*
+Options only applicable for *GeneratorType.JSON*
 
 | argument | values | Description |
 | --- | --- | -- |
@@ -45,7 +45,7 @@ Annotations only applicable for *GeneratorType.JSON*
 |datePattern| "yyyy-MM-dd" |Pattern for *@JsonFormat* generated for *LocalDate* fields in the generated class |
 |dateTimePattern| "yyyy-MM-dd HH:mm:ss" |Pattern for *@JsonFormat* generated for *LocalDateTime* fields in the generated class |
 
-Annotations only applicable for *GeneratorType.XML*
+Options only applicable for *GeneratorType.XML*
 
 | argument | values | Description |
 | --- | --- | -- |
