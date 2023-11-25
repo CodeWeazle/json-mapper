@@ -11,7 +11,9 @@
  */
 package net.magiccode.kilauea.generator;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -195,10 +197,15 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 
 			// check for namespace annotation on field
 			if (field.getAnnotation(XMLNamespace.class) != null) {
-				String namespace = field.getAnnotation(XMLNamespace.class).value();					
+				String namespace = field.getAnnotation(XMLNamespace.class).value();
 				xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , namespace);
-			} else if (StringUtil.isNotBlank(annotationInfo.xmlns())) {	// add default namespace if not blank  
-				xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , annotationInfo.xmlns());
+			} else {
+				String namespace = fieldIsMapped ? getMappingAnnotationNamespace(field) : annotationInfo.xmlns();
+				if (StringUtil.isBlank(namespace) && StringUtil.isNotBlank(annotationInfo.xmlns())) {	// add default namespace if not blank
+					namespace = annotationInfo.xmlns();
+				}
+				if (StringUtil.isNotBlank(namespace))
+					xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , namespace);
 			}
 
 			annotations.add(xmlPropertyAnnotationBuilder.build());
@@ -230,6 +237,29 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 		return fieldspec;
 	}
 
+	/**
+	 * retrieve namespace entry of {@code Mapped} annotation of field mapped 
+	 * with {@code Mappde(type=GeneratorType.XML)}
+	 * 
+	 * @param field the field to check for 
+	 * @return the namespace of the class of the field.
+	 */
+	private String getMappingAnnotationNamespace(VariableElement field) {
+		TypeElement fieldClassType = getElementUtils().getTypeElement(field.asType().toString());
+		String nameSpace="";
+		if (fieldClassType != null) {
+			nameSpace = 
+				Arrays.asList(fieldClassType.getAnnotationsByType(Mapped.class))
+				.stream()
+				.filter(annotation -> ((Mapped) annotation).type().equals(GeneratorType.XML))
+				.map(annotation -> ((Mapped) annotation).xmlns())
+				.findFirst().orElse("");
+		}
+		return nameSpace;		
+	}
+	
+	
+	
 	@Override
 	public Types getTypeUtils() {
 		return procEnv.getTypeUtils();

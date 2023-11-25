@@ -826,18 +826,6 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 		return methodNames;
 	}
 
-//	/**
-//	 * return mapped field class name
-//	 * @param annotationInfo
-//	 * @param fieldElementClass
-//	 * @return mappedFieldClassName
-//	 */
-//	private TypeName getMappedTypeName(final ElementInfo annotationInfo, ClassName fieldElementClass) {
-//		String fcName = annotationInfo.prefix() + fieldElementClass.simpleName();
-//		ClassName mappedFieldClassName = ClassName.get(generatePackageName(fieldElementClass, annotationInfo), fcName);
-//		return mappedFieldClassName;
-//	}
-
 	/**
 	 * generates a <i>to</i>-method which returns an instance of the annotated class
 	 * with copies of all field values.
