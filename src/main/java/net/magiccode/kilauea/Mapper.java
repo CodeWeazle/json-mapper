@@ -286,17 +286,16 @@ public class Mapper extends MapperBase {
 																	// package name is not given
 																	.prefix(prefix) // prefix for generated class, defaults to JSON
 																	.chainedSetters(mapped.chainedSetters()) // true generates "return this" for setters.
-																	.fluentAccessors(mapped.fluentAccessors()).jsonInclude(mapped.jsonInclude()) // defines the
-																										// generated
-																										// value for
-																										// @JsonInclude
-																										// generated.
+																	.fluentAccessors(mapped.fluentAccessors())
+																	.jsonInclude(mapped.jsonInclude()) // type=JSON only. Defines the generated value for @JsonInclude generated.
 																	.element(typeElement) // the current element
 																	.fields(fields) // field descriptions of the annotated class
 																	.inheritFields(mapped.inheritFields()) // inherit fields from superclasses
 																	.datePattern(mapped.datePattern())
 																	.dateTimePattern(mapped.dateTimePattern())
-																	.useLombok(mapped.useLombok());
+																	.useLombok(mapped.useLombok())
+																	// xml only
+																	.xmlns(mapped.xmlns());
 		// add superclass
 		if (superClassElement != null) {
 			elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));

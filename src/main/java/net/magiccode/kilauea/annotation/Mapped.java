@@ -78,14 +78,6 @@ public @interface Mapped {
 	String subpackageName() default "";
 	
 	/**
-	 * Generated classes are annotated with @JsonInclude. This defaults to ALWAYS, but can be specified otherwise by using the jsonInclude argument.
-	 * (ALWAYS, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS)
-	 * 
-	 * @return as set or Include.ALWAYS (default)
-	 */
-	Include jsonInclude() default Include.ALWAYS;
-	
-	/**
 	 * Setting useLombok to true generates much less code, because getters and setters can be replace by lombok annotations, just as the constructor(s), toString etc.
 	 * 
 	 * @return as set or false (default)
@@ -127,6 +119,24 @@ public @interface Mapped {
 	 * for a date pattern to customise the JSON output. Default pattern is "yyyy-MM-dd HH:mm:ss" 
 	 */
 	String dateTimePattern() default  "yyyy-MM-dd HH:mm:ss";
+	
+	/**
+	 * Generated classes are annotated with @JsonInclude. This defaults to ALWAYS, but can be specified otherwise by using the jsonInclude argument.
+	 * (ALWAYS, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS)
+	 * (Only for type=GeneratorType.JSON)
+	 * 
+	 * @return as set or Include.ALWAYS (default)
+	 */
+	Include jsonInclude() default Include.ALWAYS;
+	
+	/**
+	 * Defines the default namespace to  be generated into the Property annotation for 
+	 * all fields. 
+	 * (Only for type=GeneratorType.XML)
+	 * 
+	 * @return the namespace set for the generated XML annotated class.
+	 */
+	String xmlns() default "";
 	
 	
 }

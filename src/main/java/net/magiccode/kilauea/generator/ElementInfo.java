@@ -110,13 +110,14 @@ public class ElementInfo {
 	 */
 	private ClassName superclass;
 	
-	// experimental
 	private boolean useLombok;
 	
 	private String datePattern;
 
 	private String dateTimePattern;
 	
+	// xml namespace
+	private String xmlns;
 	
 	/**
 	 * add an interface specification from a ClassName.
@@ -136,7 +137,5 @@ public class ElementInfo {
 		return interfaces().stream().filter(intf-> intf.canonicalName().equals(className.canonicalName())).count()>0;
 	}
 
-	
-	
 	
 }

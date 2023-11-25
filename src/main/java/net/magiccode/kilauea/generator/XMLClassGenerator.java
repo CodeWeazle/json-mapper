@@ -45,6 +45,7 @@ import com.squareup.javapoet.TypeName;
 
 import net.magiccode.kilauea.annotation.Mapped;
 import net.magiccode.kilauea.annotation.XMLMappedBy;
+import net.magiccode.kilauea.annotation.XMLNamespace;
 import net.magiccode.kilauea.annotation.XMLRequired;
 import net.magiccode.kilauea.annotation.XMLTransient;
 import net.magiccode.kilauea.util.StringUtil;
@@ -108,11 +109,15 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 	 */
 	
 	public List<AnnotationSpec> getAdditionalAnnotationsForClass(final ElementInfo annotationInfo) {
+		AnnotationSpec.Builder xmlRootAnnotationBuilder = AnnotationSpec.builder(XmlRootElement.class);		
+		xmlRootAnnotationBuilder.addMember("name", "$S", StringUtil.camelToSnake( annotatedClass.simpleName() ) );
+		if (StringUtil.isNotBlank(annotationInfo.xmlns())) {
+			xmlRootAnnotationBuilder.addMember("namespace", "$S" , annotationInfo.xmlns());
+		}
+		
 		List<AnnotationSpec> annotations =
-				List.of(
-				AnnotationSpec.builder(XmlRootElement.class)
-							  .addMember("name", "$S", StringUtil.camelToSnake( annotatedClass.simpleName() ) )
-							  .build(),
+				List.of(xmlRootAnnotationBuilder.build(),
+							  
 				AnnotationSpec.builder(XmlAccessorType.class)
 							  .addMember("value", "$T.$L", XmlAccessType.class, XmlAccessType.FIELD.name())
 							  .build());
@@ -186,6 +191,16 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 			if (field.getAnnotation(XMLRequired.class) != null) {
 				xmlPropertyAnnotationBuilder.addMember("required", "true");
 			}
+
+
+			// check for namespace annotation on field
+			if (field.getAnnotation(XMLNamespace.class) != null) {
+				String namespace = field.getAnnotation(XMLNamespace.class).value();					
+				xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , namespace);
+			} else if (StringUtil.isNotBlank(annotationInfo.xmlns())) {	// add default namespace if not blank  
+				xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , annotationInfo.xmlns());
+			}
+
 			annotations.add(xmlPropertyAnnotationBuilder.build());
 			
 			TypeMirror type = field.asType();
