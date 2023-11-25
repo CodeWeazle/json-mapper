@@ -207,15 +207,9 @@ public class JSONExample01 implements Serializable {
 Getter and setter methods are being generated as necessary.
 
 
-<<<<<<< HEAD
 ### Fields that are @Mapped with the same *type* option
 
-Fields of classes which are annotated by @Mapped themselves will be mapped into the appropriate (generated) mapping class of this field. Mapping of values happens automatically.
-=======
-### Fields that are @Mapped (with the same type)
-
 Fields of classes which are annotated by @Mapped themselves and have the same *type* set, will be mapped into the appropriate (generated) mapping class of this field. Mapping of values happens automatically.
->>>>>>> main
 
 ```
 @Mapped(type=GeneratorType.JSON, fluentAccessors = false)
