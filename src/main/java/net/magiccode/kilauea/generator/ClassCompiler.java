@@ -1,17 +1,17 @@
 /**
- * json-mapper
+ * kilauea
  * 
  * ClassCompiler compiles given java file into class file.
  *
- * Published under Apache-2.0 license (https://github.com/CodeWeazle/json-mapper/blob/main/LICENSE)
+ * Published under Apache-2.0 license (https://github.com/CodeWeazle/kilauea/blob/main/LICENSE)
  * 
- * Code: https://github.com/CodeWeazle/json-mapper
+ * Code: https://github.com/CodeWeazle/kilauea
  * 
  * @author CodeWeazle (2023)
  * 
  * Filename: ClassCompiler.java
  */
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.io.File;
 import java.io.IOException;

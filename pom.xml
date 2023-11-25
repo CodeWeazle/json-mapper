@@ -2,20 +2,21 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>net.magiccode.json</groupId>
-	<artifactId>json-mapper</artifactId>
-	<version>0.0.9</version>
+	<groupId>net.magiccode</groupId>
+	<artifactId>kilauea</artifactId>
+	<version>0.1.0</version>
 	<description>Provides annotations for entity-json mapping dto generation</description>
-	<url>https://github.com/CodeWeazle/json-mapper</url>
+	<url>https://github.com/CodeWeazle/kilauea</url>
 
 	<properties>
 		<java.version>17</java.version>
-		<jackson.version>2.15.0</jackson.version>
+		<jackson.version>2.16.0</jackson.version>
 		<log4j.version>2.21.1</log4j.version>
 		<lombok.version>1.18.30</lombok.version>
 		<javapoet.version>1.13.0</javapoet.version>
 		<auto-service.version>1.1.1</auto-service.version>
-
+		<jaxb-api.version>2.3.1</jaxb-api.version>
+		<jaxb-runtime.version>2.3.2</jaxb-runtime.version>
 		<delombok.output>target/delombok</delombok.output>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -40,6 +41,12 @@
 			<version>${jackson.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+
 		<!-- Java 8 date/time support according to jsr310 -->
 		<dependency>
 		    <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -54,6 +61,24 @@
 		    <version>${jackson.version}</version>
 		</dependency>
 		
+		<!-- allows usage of JaxB annotations -->		
+		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-jaxb-annotations</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>${jaxb-api.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<version>${jaxb-runtime.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -139,7 +164,7 @@
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.6.0</version>
 				<configuration>
-					<show>private</show>
+					<show>public</show>
 					<nohelp>true</nohelp>
 					<sourcepath>${delombok.output}</sourcepath>
 				</configuration>
@@ -222,14 +247,14 @@
 			<name>Volker Karlmeier</name>
 			<email>volker@magiccode.net</email>
 			<timezone>Europe/London</timezone>
-			<url>https://github.com/CodeWeazle/json-mapper</url>
+			<url>https://github.com/CodeWeazle/kilauea</url>
 		</developer>
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://github.com/CodeWeazle/json-mapper.git</connection>
-		<developerConnection>scm:git:ssh://github.com:CodeWeazle/json-mapper.git</developerConnection>
-		<url>https://maven.pkg.github.com/CodeWeazle/json-mapper</url>
+		<connection>scm:git:git://github.com/CodeWeazle/kilauea.git</connection>
+		<developerConnection>scm:git:ssh://github.com:CodeWeazle/kilauea.git</developerConnection>
+		<url>https://maven.pkg.github.com/CodeWeazle/kilauea</url>
 	</scm>
 
 </project>

@@ -1,19 +1,22 @@
 /**
  * 
  */
-package net.magiccode.json.annotation;
+package net.magiccode.kilauea.annotation;
 
 import static java.lang.annotation.ElementType.TYPE;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Target;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import net.magiccode.kilauea.generator.GeneratorType;
+
 @Documented
 @Target(TYPE)
 /**
- * Any class annotated with JSONMapped will generate a copy with 
+ * Any class annotated with Mapped will generate a copy with 
  * all fields of the original class annotated with Jackson annotations
  * for easy json processing.
  * 
@@ -27,7 +30,17 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  *  with arguments, which basically functions just like an all arguments constructor.
  *  
  */
-public @interface JSONMapped {
+@Repeatable(Mappers.class)
+public @interface Mapped {
+	
+	/**
+	 * type of generator to be used for the mapped class. 
+	 * defaults to GeneratorType.POJO, also available GeneratorType.JSON
+	 * and GeneratorType.XML
+	 *  
+	 * @return the selected generator types
+	 */
+	GeneratorType type() default GeneratorType.POJO;
 	
 	/**
 	 * Generates setters which return this. Defaults to <i>true</i>
@@ -46,9 +59,9 @@ public @interface JSONMapped {
 	/**
 	 * Adds a prefix to the name of the generated class. Defaults to "JSON"
 	 * 
-	 * @return  as set or "JSON" (default)
+	 * @return  as set or the uppercase type (POJO,JSON,XML)
 	 */
-	String prefix() default "JSON";
+	String prefix() default "";
 	
 	/**
 	 * Defines the name of the packacke for the generated class. If no packageName is given, this defaults to the package of the annotated class.
@@ -60,17 +73,9 @@ public @interface JSONMapped {
 	/**
 	 * Defines the name for a subpackage added to the default if packageName is not specified.
 	 * 
-	 * @return as set or "json" (default)
+	 * @return as set or the lowercase type (pojo,json,xml)
 	 */
-	String subpackageName() default "json";
-	
-	/**
-	 * Generated classes are annotated with @JsonInclude. This defaults to ALWAYS, but can be specified otherwise by using the jsonInclude argument.
-	 * (ALWAYS, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS)
-	 * 
-	 * @return as set or Include.ALWAYS (default)
-	 */
-	Include jsonInclude() default Include.ALWAYS;
+	String subpackageName() default "";
 	
 	/**
 	 * Setting useLombok to true generates much less code, because getters and setters can be replace by lombok annotations, just as the constructor(s), toString etc.
@@ -114,6 +119,24 @@ public @interface JSONMapped {
 	 * for a date pattern to customise the JSON output. Default pattern is "yyyy-MM-dd HH:mm:ss" 
 	 */
 	String dateTimePattern() default  "yyyy-MM-dd HH:mm:ss";
+	
+	/**
+	 * Generated classes are annotated with @JsonInclude. This defaults to ALWAYS, but can be specified otherwise by using the jsonInclude argument.
+	 * (ALWAYS, NON_NULL, NON_ABSENT, NON_EMPTY, NON_DEFAULT, CUSTOM, USE_DEFAULTS)
+	 * (Only for type=GeneratorType.JSON)
+	 * 
+	 * @return as set or Include.ALWAYS (default)
+	 */
+	Include jsonInclude() default Include.ALWAYS;
+	
+	/**
+	 * Defines the default namespace to  be generated into the Property annotation for 
+	 * all fields. 
+	 * (Only for type=GeneratorType.XML)
+	 * 
+	 * @return the namespace set for the generated XML annotated class.
+	 */
+	String xmlns() default "";
 	
 	
 }
