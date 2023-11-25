@@ -50,7 +50,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 
 ### Gradle
 ```
-implementation group: 'net.magiccode', name: 'kilauea', version: '0.0.9'
+implementation group: 'net.magiccode', name: 'kilauea', version: '0.1.0'
 
 ...
 dependencies {
