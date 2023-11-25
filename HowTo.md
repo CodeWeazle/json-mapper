@@ -30,9 +30,9 @@ Some arguments can be provided to have some influence on the code generation. Op
 |useLombok |true, **false**|Setting useLombok to true generates much less code, because getters and setters can be replaced by lombok annotations, just as the constructor(s), toString etc.|
 |fluentAccessors |true, **false**|Creates getters and setters that do not start with *get*, *is* or *set* rather than the actual name of the field. If useLombok is *true*, this setting is passed on to @Accessors(fluent=true&#124;false).|
 |chainedSetters |**true**, false|Generates setters which return *this*. |
-|prefix | JSON |Adds a prefix to the name of the generated class. Defaults to "JSON"|
-|packageName| |Defines the name of the packacke for the generated class. If no *packageName* is given, this defaults to the package of the annotated class.|
-|subpackageName| json |Defines the name for a subpackage added to the default if *packageName* is not specified. The default value is *json*|
+|prefix |  |Adds a prefix to the name of the generated class. Defaults to the uppercase type, like *POJO*,*JSON*,*XML*|
+|packageName| |Defines the name of the package for the generated class. If no *packageName* is given, this defaults to the package of the annotated class.|
+|subpackageName| |Defines the name for a sub-package added to the default if *packageName* is not specified. The default value is is the lowercase type, like *pojo*,*json*,*xml* |
 |superClass| |Fully qualified name of the superclass that the generated class will extend.|
 |interfaces| |Comma separated list of fully qualified name of the interfaces that the generated class will implement.|
 |inheritFields|**true**, false|Defines whether or not fields from the super-class hierarchy of the annotated class should be generated. Default is **true**|
