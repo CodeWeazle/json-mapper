@@ -169,7 +169,7 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 		
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
-		if (field.getAnnotation(XMLTransient.class) == null) {
+		if (field.getAnnotation(XMLTransient.class) == null && field.getAnnotation(XmlTransient.class) == null) {
 			AnnotationSpec.Builder xmlPropertyAnnotationBuilder;
 			// primitive types (and types in java.lang) are mapped as attributes
 			if (fieldClass.isPrimitive() || field.asType().toString().startsWith("java.lang") ) {
