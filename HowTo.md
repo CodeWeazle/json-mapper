@@ -93,7 +93,6 @@ private Double requiredValue;
 ```
 in the generated class.
 
-<<<<<<< HEAD
 ### @Mappers
 
 The *@Mapped* annotation is now repeatable. To generate multiple classes, use this wrapper annotation like so:
@@ -108,7 +107,6 @@ The *@Mapped* annotation is now repeatable. To generate multiple classes, use th
 })
 ```
 
-=======
 ### @XMLNamespace
 
 On field level the namespace can be overwritten by the use of the **@XMLNamespace** annotation, providing the namespace as the value.
@@ -116,7 +114,6 @@ On field level the namespace can be overwritten by the use of the **@XMLNamespac
 @NMLNamespace("urn:example:fiel-namespace")
 ...
 ```
->>>>>>> main
 
 ## Use of generated classes
 
