@@ -1,17 +1,18 @@
 /**
- * json-mapper
+ * kilauea
  * 
- * Published under Apache-2.0 license (https://github.com/CodeWeazle/json-mapper/blob/main/LICENSE)
+ * Published under Apache-2.0 license (https://github.com/CodeWeazle/kilauea/blob/main/LICENSE)
  * 
- * Code: https://github.com/CodeWeazle/json-mapper
+ * Code: https://github.com/CodeWeazle/kilauea
  * 
  * @author CodeWeazle (2023)
  * 
  * Filename: JsonMapper.java
  */
-package net.magiccode.json;
+package net.magiccode.kilauea;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,10 +40,13 @@ import javax.tools.Diagnostic;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 
-import net.magiccode.json.annotation.JSONMapped;
-import net.magiccode.json.generator.ElementInfo;
-import net.magiccode.json.generator.ElementInfo.ElementInfoBuilder;
-import net.magiccode.json.generator.JSONClassGenerator;
+import net.magiccode.kilauea.annotation.Mapped;
+import net.magiccode.kilauea.annotation.Mappers;
+import net.magiccode.kilauea.generator.ClassGeneratorFactory;
+import net.magiccode.kilauea.generator.ElementInfo;
+import net.magiccode.kilauea.generator.GeneratorType;
+import net.magiccode.kilauea.generator.ElementInfo.ElementInfoBuilder;
+import net.magiccode.kilauea.util.StringUtil;
 
 /**
  * Annotation processor with the purpose to generate Jackson annotated Java code for JSON DTOs.
@@ -51,10 +55,10 @@ import net.magiccode.json.generator.JSONClassGenerator;
  *  This provides methods (of/to) to map between populated instances of the annotated and the 
  *  generated class.
  */
-@SupportedAnnotationTypes("net.magiccode.json.annotation.*")
+@SupportedAnnotationTypes("net.magiccode.kilauea.annotation.*")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
-public class JsonMapper extends MapperBase {
+public class Mapper extends MapperBase {
 
 	/**
 	 * supports the creation of new files.
@@ -72,7 +76,7 @@ public class JsonMapper extends MapperBase {
 	/**
 	 * hollow constructor
 	 */
-	public JsonMapper() {
+	public Mapper() {
 	}
 
 	@Override
@@ -90,49 +94,71 @@ public class JsonMapper extends MapperBase {
 	 * @param annotations
 	 * @param roundEnv - contains the environment of the compiler round.
 	 */
-	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+	public boolean process(final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnv) {
 
-		Map<ClassName, List<ElementInfo>> result = new HashMap<>();
+		final Map<ClassName, List<ElementInfo>> result = new HashMap<>();
 
 		// collect annotation information
-		processJSONMapped(roundEnv, result);
+		processMappedClasses(roundEnv, result, Mapped.class);
 
 		// generate code with collected results
-		try {
-			new JSONClassGenerator(procEnv, filer, messager, result).generate();
-		} catch (IOException e) {
-			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
+
+		for (ClassName key : result.keySet()) {
+			result.get(key).stream().forEach(annotationInfo -> {
+					GeneratorType type = annotationInfo.type();
+					if (type == null) {
+						type = GeneratorType.POJO;
+					}
+					// generate class for each given type
+					try {
+						ClassGeneratorFactory.getClassGenerator(type, procEnv, filer, messager, annotationInfo, key, result).generate();
+					} catch (IOException e) {
+						messager.printMessage(Diagnostic.Kind.ERROR, "IOException during class generation. ("+e.getLocalizedMessage()+")");
+					}
+			});
 		}
 		return true;
 	}
-
+	
 	/**
- 	 * process @JSONMapped annotation
+ 	 * process @Mapped annotation
  	 * 
 	 * @param roundEnv - The environment for this round
 	 * @param result - Map containing the generated information from the annotated {@code TypeElement}
 	 */
-	private void processJSONMapped(final RoundEnvironment roundEnv, final Map<ClassName, List<ElementInfo>> result) {
+	private void processMappedClasses(final RoundEnvironment roundEnv, final Map<ClassName, List<ElementInfo>> result, final Class<? extends Annotation> annotationClass) {
 		
 		// retrieve elements annotated with JSONMapped
-		for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(JSONMapped.class)) {
+		for (Element annotatedElement : roundEnv.getElementsAnnotatedWithAny( procEnv.getElementUtils().getTypeElement(annotationClass.getCanonicalName()), 
+																			  procEnv.getElementUtils().getTypeElement(Mappers.class.getCanonicalName())))  {
 			// if the annotation is not on a class, report an error !
 			if (annotatedElement.getKind() != ElementKind.CLASS) {
-				messager.printMessage(Diagnostic.Kind.WARNING, "Only class can be annotated with JSONMapped",
-						annotatedElement);
+				messager.printMessage(Diagnostic.Kind.WARNING, "Only class can be annotated with "+annotatedElement.getSimpleName(), annotatedElement);
 				continue;
 			}
 			
 			TypeElement typeElement = (TypeElement) annotatedElement;
-			// only execute the following code when the given element has is @JSONMapped
-			JSONMapped jsonMapped = annotatedElement.getAnnotation(JSONMapped.class);
-			if (jsonMapped != null) {
-				generateClassInformation (result, typeElement, jsonMapped);
-			}
 			
+		    Arrays.asList(annotatedElement.getAnnotationsByType(Mapped.class)).stream()
+				  .forEach(annotation -> {
+					  generateClassInformation (result, typeElement, annotation);												  
+				  });
 		}
-
 	}
+
+//	/**
+//	 * @param result
+//	 * @param annotatedElement
+//	 * @param typeElement
+//	 */
+//	private void generateClassInformation(final Map<ClassName, List<ElementInfo>> result,
+//		Element annotatedElement, TypeElement typeElement) {
+//		// only execute the following code when the given element has is @Mapped
+//		Mapped mapped = annotatedElement.getAnnotation(Mapped.class);
+//		if (mapped != null) {
+//			generateClassInformation (result, typeElement, mapped);
+//		}
+//	}
 
 	
 	/**
@@ -140,11 +166,11 @@ public class JsonMapper extends MapperBase {
 	 * 
 	 * @param result - Map containing the generated information from the annotated {@code TypeElement}
 	 * @param annotatedElement - The annotated {@code TypeElement}
-	 * @param jsonMapped - The {@code @JSONMapped} annotation
+	 * @param mapped - The {@code @Mapped} annotation
 	 */
 	private void generateClassInformation (final Map<ClassName, List<ElementInfo>> result,
 										  TypeElement annotatedElement,
-										  JSONMapped jsonMapped) {
+										  Mapped mapped) {
 					
 			/* check for superclass
 			 * 
@@ -161,13 +187,12 @@ public class JsonMapper extends MapperBase {
 				
 				/** find fields */
 				List<VariableElement> fields = ElementFilter.fieldsIn(annotatedElement.getEnclosedElements());				
-				/** find typeElement for specified super-classs */
-				
+				/** find typeElement for specified super-classs */				
 				
 				if (superClassElement == null)
-					superClassElement = procEnv.getElementUtils().getTypeElement(jsonMapped.superclass());
+					superClassElement = procEnv.getElementUtils().getTypeElement(mapped.superclass());
 				
-				if (jsonMapped.inheritFields())
+				if (mapped.inheritFields())
 					addSuperclassFields(annotatedElement, fields);
 				
 				/**
@@ -175,20 +200,19 @@ public class JsonMapper extends MapperBase {
 				 * We use a map for this purpose. Key is the class-name, value the found TypeElement
 				 */
 				final Map<String, TypeElement> interfaces = new HashMap<>();
-				if (jsonMapped.interfaces() != null) {
-					Arrays.asList(jsonMapped.interfaces()).stream().forEach(intf -> {
+				if (mapped.interfaces() != null) {
+					Arrays.asList(mapped.interfaces()).stream().forEach(intf -> {
 						TypeElement interfaceElement = procEnv.getElementUtils().getTypeElement(intf);
 						interfaces.put(intf, interfaceElement);
 					});
 				}
-				
-				ElementInfo elementInfo = createElementInfo(jsonMapped, annotatedElement, className, fields, superClassElement, interfaces);
-				result.get(className).add(elementInfo);
-				
+				ElementInfo elementInfo = createElementInfo(mapped, annotatedElement, className, fields, superClassElement, interfaces);
+				result.get(className).add(elementInfo);				
 			}
-
+			
 	}
-
+	
+	
 	/**
 	 * recursively add superclass fields
 	 * 
@@ -204,7 +228,7 @@ public class JsonMapper extends MapperBase {
 			if (!superclass.getKind().equals(TypeKind.DECLARED)) {
 					return;
 			} else  {				
-				// only generate superclasselement if it does not have a @JSONMapped annotation
+				// only generate superclasselement if it does not have a @Mapped annotation
 				TypeElement superClassElement = procEnv.getElementUtils().getTypeElement(superclass.toString());
 				if (superClassElement != null /*&& superclass.getAnnotationsByType(JSONMapped.class) == null*/) {
 					ElementFilter.fieldsIn(superClassElement.getEnclosedElements()).stream()
@@ -219,46 +243,59 @@ public class JsonMapper extends MapperBase {
 		}
 	}
 	
-	
+
 	/**
 	 * create ElementInfo object out of given JSONMapped information, extended by 
 	 * information about the environment like the fields of the annotated class.
 	 * 
-	 * @param jsonMapped - The {@code @JSONMapped} annotation
+	 * @param mapped - The {@code @Mapped} annotation
 	 * @param typeElement - the annotated {@code TypeElement}
-	 * @param className {@code ClassName} instance of the class containing the{@code @JSONMapped} annotaton
+	 * @param className {@code ClassName} instance of the class containing the{@code @Mapped} annotaton
 	 * @param fields - {@code VariableElement} representation of the fields of the annotated class
 	 * @param superClassElement - {@code TypeElement} of (an existing) class to be extended by every generated class
 	 * @param interfaces - {@code java.util.Map} containing all interfaces the generated classes are to implement.
 	 * @return an instance of the class {@code ElementInfo} containing all information from the annotation (or defaults), that are going to be used for the code generation. 
 	 */
-	private ElementInfo createElementInfo(final JSONMapped jsonMapped, 
+	private ElementInfo createElementInfo(final Mapped mapped, 
 										  final TypeElement typeElement, 
 										  final ClassName className,
 										  final List<VariableElement> fields, 
 										  final TypeElement superClassElement, 
 										  final Map<String, TypeElement> interfaces) {
 		
+		// handle default subpackage name
+		String subpackageName = mapped.subpackageName();
+		if (StringUtil.isBlank(subpackageName)) {
+			subpackageName=mapped.type().name().toLowerCase();
+		}
+
+		// handle default class prefix
+		String prefix = mapped.prefix();
+		if (StringUtil.isBlank(prefix)) {
+			prefix=mapped.type().name().toUpperCase();
+		}
+
+		// build the annotation information object for the generator
 		ElementInfoBuilder elementInfoBuiler = ElementInfo.builder().className(className.simpleName()) // the name of the class
 																										// containing the
 																										// annotation
-																	.packageName(jsonMapped.packageName()) // package name of the generated class (optional), default is
+																	.type(mapped.type())
+																	.packageName(mapped.packageName()) // package name of the generated class (optional), default is
 																	// package of annotated class
-																	.subpackageName(jsonMapped.subpackageName()) // subpackage name added to annotated class package if
-																	// packaage name is not given
-																	.prefix(jsonMapped.prefix()) // prefix for generated class, defaults to JSON
-																	.chainedSetters(jsonMapped.chainedSetters()) // true generates "return this" for setters.
-																	.fluentAccessors(jsonMapped.fluentAccessors()).jsonInclude(jsonMapped.jsonInclude()) // defines the
-																										// generated
-																										// value for
-																										// @JsonInclude
-																										// generated.
+																	.subpackageName(subpackageName) // subpackage name added to annotated class package if
+																	// package name is not given
+																	.prefix(prefix) // prefix for generated class, defaults to JSON
+																	.chainedSetters(mapped.chainedSetters()) // true generates "return this" for setters.
+																	.fluentAccessors(mapped.fluentAccessors())
+																	.jsonInclude(mapped.jsonInclude()) // type=JSON only. Defines the generated value for @JsonInclude generated.
 																	.element(typeElement) // the current element
 																	.fields(fields) // field descriptions of the annotated class
-																	.inheritFields(jsonMapped.inheritFields()) // inherit fields from superclasses
-																	.datePattern(jsonMapped.datePattern())
-																	.dateTimePattern(jsonMapped.dateTimePattern())
-																	.useLombok(jsonMapped.useLombok());
+																	.inheritFields(mapped.inheritFields()) // inherit fields from superclasses
+																	.datePattern(mapped.datePattern())
+																	.dateTimePattern(mapped.dateTimePattern())
+																	.useLombok(mapped.useLombok())
+																	// xml only
+																	.xmlns(mapped.xmlns());
 		// add superclass
 		if (superClassElement != null) {
 			elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));
@@ -277,5 +314,6 @@ public class JsonMapper extends MapperBase {
 		}
 		return elementInfo;
 	}
+
 
 }

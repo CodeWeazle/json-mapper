@@ -35,4 +35,4 @@ pom.xml.swp
 
 #exclude GitHub workflows
 .github/workflows/maven-central.yml
-
+.metadata/

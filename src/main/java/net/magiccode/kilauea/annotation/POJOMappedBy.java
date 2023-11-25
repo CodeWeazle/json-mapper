@@ -1,7 +1,7 @@
 /**
  * 
  */
-package net.magiccode.json.annotation;
+package net.magiccode.kilauea.annotation;
 
 import static java.lang.annotation.ElementType.TYPE;
 
@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
  * argument. This makes it easier to process this annotation at runtime, for instance
  * using instrumentation.
  */
-public @interface JSONMappedBy {
+public @interface POJOMappedBy {
 
 	Class<?> mappedClass() default Object.class;
 }

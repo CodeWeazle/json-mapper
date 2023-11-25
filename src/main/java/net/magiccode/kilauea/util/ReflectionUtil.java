@@ -1,15 +1,15 @@
 /**
- * json-mapper
+ * kilauea
  * 
- * Published under Apache-2.0 license (https://github.com/CodeWeazle/json-mapper/blob/main/LICENSE)
+ * Published under Apache-2.0 license (https://github.com/CodeWeazle/kilauea/blob/main/LICENSE)
  * 
- * Code: https://github.com/CodeWeazle/json-mapper
+ * Code: https://github.com/CodeWeazle/kilauea
  * 
  * @author CodeWeazle (2023)
  * 
  * Filename: ReflectionUtil.java
  */
-package net.magiccode.json.util;
+package net.magiccode.kilauea.util;
 
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;

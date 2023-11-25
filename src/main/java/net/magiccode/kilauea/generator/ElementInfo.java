@@ -1,15 +1,15 @@
 /**
- * json-mapper
+ * kilauea
  * 
- * Published under Apache-2.0 license (https://github.com/CodeWeazle/json-mapper/blob/main/LICENSE)
+ * Published under Apache-2.0 license (https://github.com/CodeWeazle/kilauea/blob/main/LICENSE)
  * 
- * Code: https://github.com/CodeWeazle/json-mapper
+ * Code: https://github.com/CodeWeazle/kilauea
  * 
  * @author CodeWeazle (2023)
  * 
  * Filename: ElementInfo.java
  */
-package net.magiccode.json.generator;
+package net.magiccode.kilauea.generator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +34,12 @@ import lombok.experimental.Accessors;
 @Getter @Accessors(fluent = true)
 @Setter
 public class ElementInfo {
+	
+	/**
+	 * type of generator to use for class generation.
+	 * These can be POJO,JSON or XML.
+	 */
+	private GeneratorType type;
 	
 	/** 
 	 * store name of annotated class
@@ -104,13 +110,14 @@ public class ElementInfo {
 	 */
 	private ClassName superclass;
 	
-	// experimental
 	private boolean useLombok;
 	
 	private String datePattern;
 
 	private String dateTimePattern;
 	
+	// xml namespace
+	private String xmlns;
 	
 	/**
 	 * add an interface specification from a ClassName.
@@ -130,7 +137,5 @@ public class ElementInfo {
 		return interfaces().stream().filter(intf-> intf.canonicalName().equals(className.canonicalName())).count()>0;
 	}
 
-	
-	
 	
 }
