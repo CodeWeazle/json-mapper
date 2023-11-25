@@ -202,7 +202,7 @@ Getter and setter methods are being generated as necessary.
 
 ### Fields that are @Mapped with the same *type* option
 
-Fields of classes which are annotated by @JSONMapped themselves will be mapped into the appropriate (generated) mapping class of this field. Mapping of values happens automatically.
+Fields of classes which are annotated by @Mapped themselves will be mapped into the appropriate (generated) mapping class of this field. Mapping of values happens automatically.
 
 ```
 @Mapped(type=GeneratorType.JSON, fluentAccessors = false)
