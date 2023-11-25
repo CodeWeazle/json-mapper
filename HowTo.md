@@ -93,6 +93,20 @@ private Double requiredValue;
 ```
 in the generated class.
 
+### @Mappers
+
+The *@Mapped* annotation is now repeatable. To generate multiple classes, use this wrapper annotation like so:
+
+```
+@Mappers ({
+	@Mapped(type=GeneratorType.JSON,fluentAccessors = true, inheritFields = true, jsonInclude = Include.NON_NULL),
+	@Mapped(type=GeneratorType.POJO,fluentAccessors = true, inheritFields = true),
+	@Mapped(type=GeneratorType.XML,fluentAccessors = false, inheritFields = true,
+			useLombok = false , 
+			xmlns = "urn:net.magiccode.exampleNS")
+})
+```
+
 
 ## Use of generated classes
 
