@@ -22,30 +22,28 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
       ...
     </dependencies>
     ...
-	<build>
-		<plugins>
+    <build>
+	<plugins>
+		...
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
 			...
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
+			<configuration>
 				...
-				<configuration>
+				<annotationProcessorPaths>
 					...
-					<annotationProcessorPaths>
-						...
-						<path>
-							<groupId>net.magiccode</groupId>
-							<artifactId>kilauea</artifactId>
-							<version>0.1.0</version>
-						</path>
-						...
-					</annotationProcessorPaths>
-				</configuration>
-			</plugin>
-
-		</plugins>
-
-	</build>
+					<path>
+						<groupId>net.magiccode</groupId>
+						<artifactId>kilauea</artifactId>
+						<version>0.1.0</version>
+					</path>
+					...
+				</annotationProcessorPaths>
+			</configuration>
+		</plugin>
+	</plugins>
+    </build>
 ```
 
 ### Gradle
@@ -111,9 +109,9 @@ At the time being, the dependencies used by *kilauea* are
 	</dependency>
 		
 	<dependency>
-	    <groupId>com.fasterxml.jackson.datatype</groupId>
-	    <artifactId>jackson-datatype-jdk8</artifactId>
-	    <version>${jackson.version}</version>
+		<groupId>com.fasterxml.jackson.datatype</groupId>
+		<artifactId>jackson-datatype-jdk8</artifactId>
+		<version>${jackson.version}</version>
 	</dependency>
 
 	<dependency>
