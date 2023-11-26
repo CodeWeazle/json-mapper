@@ -111,7 +111,7 @@ The *@Mapped* annotation is now repeatable. To generate multiple classes, use th
 
 On field level the namespace can be overwritten by the use of the **@XMLNamespace** annotation, providing the namespace as the value.
 ```
-@NMLNamespace("urn:magiccode.net.exampleNS")
+@XMLNamespace("urn:magiccode.net.exampleNS")
 ...
 ```
 
