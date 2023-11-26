@@ -62,7 +62,7 @@ dependencies {
 
 ### Others
 
-For other build systems please consult the current [maven-central site](https://central.sonatype.com/artifact/net.magiccode.kilauea/kilauea)
+For other build systems please consult the current [maven-central site](https://central.sonatype.com/artifact/net.magiccode/kilauea)
 
 
 ## Annotations
