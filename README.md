@@ -1,6 +1,4 @@
 # kilauea
-
-![kilauea](./img/kilauea.png =400x)
 <img src="./img/kilauea.png" alt="kilauea" style="width:400px;"/>
 
 *kilauea* implements an annotation processor to generate Java classes with or without annotations, depending 
