@@ -22,7 +22,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
       ...
     </dependencies>
     ...
-<build>
+    <build>
 	<plugins>
 		...
 		<plugin>
@@ -42,10 +42,8 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 				</annotationProcessorPaths>
 			</configuration>
 		</plugin>
-
 	</plugins>
-
-</build>
+    </build>
 ```
 
 ### Gradle
