@@ -1,6 +1,6 @@
 # kilauea
 
-![kilauea](./img/kilauea.png)
+![kilauea](./img/kilauea.png | width=400)
 
 *kilauea* implements an annotation processor to generate Java classes with or without annotations, depending 
 on the option set by type. Available are POJO, JSON and XML. 
