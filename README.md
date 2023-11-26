@@ -1,5 +1,7 @@
 # kilauea
 
+![kilauea](./img/kilauea.png)
+
 *kilauea* implements an annotation processor to generate Java classes with or without annotations, depending 
 on the option set by type. Available are POJO, JSON and XML. 
 POJO will create mapping classes without any annotations, JSON generates Jackson annotations and XML generates mapping classes with JaxB annotation.
