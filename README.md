@@ -49,12 +49,12 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 
 ### Gradle
 ```
-implementation group: 'net.magiccode', name: 'kilauea', version: '0.1.0'
+implementation group: 'net.magiccode', name: 'kilauea', version: '0.1.1'
 
 ...
 dependencies {
-  compile("net.magiccode:kilauea:0.1.0")
-  annotationProcessor("net.magiccode:kilauea:0.1.0")
+  compile("net.magiccode:kilauea:0.1.1")
+  annotationProcessor("net.magiccode:kilauea:0.1.1")
   ...
 }
 ```
