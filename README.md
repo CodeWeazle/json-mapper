@@ -18,7 +18,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
       <dependency>
 	 	<groupId>net.magiccode</groupId>
 		<artifactId>kilauea</artifactId>
-		<version>0.1.0</version>
+		<version>0.1.1</version>
       </dependency>
       ...
     </dependencies>
@@ -37,7 +37,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 					<path>
 						<groupId>net.magiccode</groupId>
 						<artifactId>kilauea</artifactId>
-						<version>0.1.0</version>
+						<version>0.1.1</version>
 					</path>
 					...
 				</annotationProcessorPaths>
