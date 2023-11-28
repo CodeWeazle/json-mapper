@@ -130,6 +130,9 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 			// generate and write class
 			TypeSpec generatedClass = generateClass(annotationInfo, className, packageName, fields, methods);
 			JavaFile javaFile = JavaFile.builder(packageName, generatedClass).indent("    ").build();
+			if (javaFile.toJavaFileObject().delete()) {
+				System.out.println("Duplicate @Mapper annotation on class "+sourceClassName+"\n. Previously generated file has been deleted. Please check your source code.");
+			}
 			javaFile.writeTo(filer);
 		} catch (IOException e) {
 			messager.printMessage(Diagnostic.Kind.ERROR, "Error occured while generating class "
