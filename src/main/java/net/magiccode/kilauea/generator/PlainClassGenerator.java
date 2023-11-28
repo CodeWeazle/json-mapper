@@ -134,7 +134,7 @@ public class PlainClassGenerator extends AbstractClassGenerator {
 
 			FieldSpec.Builder fieldSpecBuilder = FieldSpec.builder(fieldType, fieldName, Modifier.PRIVATE); 
 			annotations.stream().forEach(annotation -> {
-				fieldSpecBuilder.addAnnotation(annotation);
+				fieldSpecBuilder.addAnnotation(annotation);	
 			});
 			fieldspec = fieldSpecBuilder.build();
 			
