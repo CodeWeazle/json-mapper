@@ -273,7 +273,7 @@ public interface ClassGenerator {
 		// create toSTring method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString").addModifiers(Modifier.PUBLIC)
 				.addStatement("$T stringRep = this.getClass().getName()+ \"(\"", String.class);
-		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
+		annotationInfo.fields().stream().filter(field -> !isFieldFinalStatic(field)).forEach(field -> {
 			String fieldName = field.getSimpleName().toString();
 			String statement = "stringRep += \"$L=\"+$L";
 			if (field != annotationInfo.fields().get(annotationInfo.fields().size() - 1))
@@ -293,8 +293,8 @@ public interface ClassGenerator {
 	 * @param field - the @see VariableElement to be checked
 	 * @return true if the given field is private, final and static
 	 */
-	default boolean isMethodFinalPrivateStatic(VariableElement field) {
-		return (field.getModifiers().contains(Modifier.FINAL) && field.getModifiers().contains(Modifier.PRIVATE)
+	default boolean isFieldFinalStatic(VariableElement field) {
+		return (field.getModifiers().contains(Modifier.FINAL) 
 				&& field.getModifiers().contains(Modifier.STATIC));
 	}
 

@@ -130,6 +130,9 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 			// generate and write class
 			TypeSpec generatedClass = generateClass(annotationInfo, className, packageName, fields, methods);
 			JavaFile javaFile = JavaFile.builder(packageName, generatedClass).indent("    ").build();
+			if (javaFile.toJavaFileObject().delete()) {
+				System.out.println("Duplicate @Mapper annotation on class "+sourceClassName+"\n. Previously generated file has been deleted. Please check your source code.");
+			}
 			javaFile.writeTo(filer);
 		} catch (IOException e) {
 			messager.printMessage(Diagnostic.Kind.ERROR, "Error occured while generating class "
@@ -188,7 +191,7 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 	protected void createFieldsGettersAndSetters(ElementInfo annotationInfo, List<FieldSpec> fields,
 			Map<String, MethodSpec> methods) {
 		// Generate fields, getters and setters
-		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
+		annotationInfo.fields().stream().filter(field -> !isFieldFinalStatic(field)).forEach(field -> {
 
 			TypeMirror fieldType = field.asType();
 			TypeName fieldTypeName = TypeName.get(fieldType);
@@ -215,7 +218,7 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 	 */
 	protected void createFields(ElementInfo annotationInfo, List<FieldSpec> fields) {
 		// Generate fields
-		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
+		annotationInfo.fields().stream().filter(field -> !isFieldFinalStatic(field)).forEach(field -> {
 			TypeMirror fieldType = field.asType();
 			TypeName fieldClass = TypeName.get(fieldType);
 			boolean fieldIsMapped = fieldIsMapped(field);
@@ -310,7 +313,7 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 						.add("Creates object with all given values, acts basically as a AllArgsConstructor.\n")
 						.build());
 
-		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
+		annotationInfo.fields().stream().filter(field -> !isFieldFinalStatic(field)).forEach(field -> {
 
 			TypeMirror fieldType = field.asType();
 			String fieldName = field.getSimpleName().toString();
@@ -412,7 +415,7 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 
 		AtomicInteger fieldCount = new AtomicInteger(0);
 		AtomicBoolean needsSuppressWarnings = new AtomicBoolean(false);
-		annotationInfo.fields().stream().filter(field -> !isMethodFinalPrivateStatic(field)).forEach(field -> {
+		annotationInfo.fields().stream().filter(field -> !isFieldFinalStatic(field)).forEach(field -> {
 
 			TypeMirror fieldType = field.asType();
 
@@ -856,7 +859,9 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 
 		AtomicInteger fieldCount = new AtomicInteger(0);
 		annotationInfo.fields().stream()
-				.filter(field -> !isMethodFinalPrivateStatic(field) && !field.getModifiers().contains(Modifier.FINAL))
+				.filter(field -> 
+						!isFieldFinalStatic(field) && 
+						!field.getModifiers().contains(Modifier.FINAL))
 				.forEach(field -> {
 					boolean fieldIsMapped = fieldIsMapped(field);
 					String fieldName = field.getSimpleName().toString();
