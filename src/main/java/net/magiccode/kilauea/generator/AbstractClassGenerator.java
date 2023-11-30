@@ -113,9 +113,11 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 			// when using lombok, we only need to generate the fields
 			if (annotationInfo.useLombok()) {
 				createFields(annotationInfo, fields);
+				createAdditionalFields(annotationInfo, fields);
 			} else { // otherwise, we also need getters and setters
 				createNoArgsConstructor(annotationInfo, methods);
 				createFieldsGettersAndSetters(annotationInfo, fields, methods);
+				createAdditionalFieldsGettersAndSetters(annotationInfo, fields, methods);
 				createToString(annotationInfo, methods);
 			}
 			createOfWithArguments(packageName, className, annotationInfo, methods);

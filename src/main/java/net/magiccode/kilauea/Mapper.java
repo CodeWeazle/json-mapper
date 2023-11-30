@@ -32,6 +32,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
@@ -40,12 +42,13 @@ import javax.tools.Diagnostic;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 
+import net.magiccode.kilauea.annotation.Field;
 import net.magiccode.kilauea.annotation.Mapped;
 import net.magiccode.kilauea.annotation.Mappers;
 import net.magiccode.kilauea.generator.ClassGeneratorFactory;
 import net.magiccode.kilauea.generator.ElementInfo;
-import net.magiccode.kilauea.generator.GeneratorType;
 import net.magiccode.kilauea.generator.ElementInfo.ElementInfoBuilder;
+import net.magiccode.kilauea.generator.GeneratorType;
 import net.magiccode.kilauea.util.StringUtil;
 
 /**
@@ -136,7 +139,7 @@ public class Mapper extends MapperBase {
 				messager.printMessage(Diagnostic.Kind.WARNING, "Only class can be annotated with "+annotatedElement.getSimpleName(), annotatedElement);
 				continue;
 			}
-			
+
 			TypeElement typeElement = (TypeElement) annotatedElement;
 			
 		    Arrays.asList(annotatedElement.getAnnotationsByType(Mapped.class)).stream()
@@ -275,6 +278,25 @@ public class Mapper extends MapperBase {
 			prefix=mapped.type().name().toUpperCase();
 		}
 
+		// additional fields to be created that are not available in the 
+		// annotated class
+		final Field[] additionalFields = mapped.additionalFields().value();		
+		final Map<String, TypeMirror> additionalFieldMap = new HashMap<>();
+		if (additionalFields != null && additionalFields.length > 0) {
+			Arrays.asList(additionalFields).stream().forEach(field -> {
+				TypeMirror fieldClass = null;
+				if( field != null ) {
+				    try  {
+				        field.fieldClass();
+				    }
+				    catch( MirroredTypeException mte ) {
+				    	fieldClass = mte.getTypeMirror();
+				    }
+				}
+				additionalFieldMap.put(field.name(), fieldClass);
+			});			
+		}
+		
 		// build the annotation information object for the generator
 		ElementInfoBuilder elementInfoBuiler = ElementInfo.builder().className(className.simpleName()) // the name of the class
 																										// containing the
@@ -294,6 +316,7 @@ public class Mapper extends MapperBase {
 																	.datePattern(mapped.datePattern())
 																	.dateTimePattern(mapped.dateTimePattern())
 																	.useLombok(mapped.useLombok())
+																	.additionalFields(additionalFieldMap)
 																	// xml only
 																	.xmlns(mapped.xmlns());
 		// add superclass
@@ -314,6 +337,23 @@ public class Mapper extends MapperBase {
 		}
 		return elementInfo;
 	}
+
+	
+   /**
+    * Return the qualified name of a type (those that contain a $ sign for
+    * nested classes).
+    * 
+    * @param tm Represent the class
+    * @return The class name
+    */
+   public static String getClassName(TypeMirror tm) {
+       if (tm.getKind().equals(TypeKind.DECLARED)) {
+           TypeElement el = (TypeElement) ((DeclaredType) tm).asElement();
+           return getClassName(el);
+       } else {
+           return tm.toString();
+       }
+   }
 
 
 }
