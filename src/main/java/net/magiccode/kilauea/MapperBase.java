@@ -11,8 +11,13 @@
  */
 package net.magiccode.kilauea;
 
+import java.util.Map.Entry;
+
 import javax.annotation.processing.AbstractProcessor;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -75,4 +80,21 @@ public abstract class MapperBase extends AbstractProcessor {
         }
         return result;
     }
+	
+   /**
+     * helper method for the extraction of the values of an Annotation
+     *   
+	 * @param annotationMirror of the annotation to get the value from
+	 * @param key  - the key of the value to get
+	 * @return the value of the annotation field as an {@code AnnotationValue}
+	 */
+	public static AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror, String key) {
+	    for(Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationMirror.getElementValues().entrySet() ) {
+	        if(entry.getKey().getSimpleName().toString().equals(key)) {
+	            return entry.getValue();
+	        }
+	    }
+	    return null;
+	}
+
 }

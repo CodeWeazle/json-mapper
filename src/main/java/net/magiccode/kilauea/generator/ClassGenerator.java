@@ -93,7 +93,7 @@ public interface ClassGenerator {
 	 * @param field          - the VariableElement or the field the setter is to be
 	 *                       created for.
 	 * @param annotationInfo - information about the arguments of the
-	 *                       <i>@JSONMapped</i> annotation
+	 *                       <i>@Mapped</i> annotation
 	 * @param fieldTypeName  - {@code TypeName} of the class for the field for which
 	 *                       the setter method is to be created.
 	 * @param methods        - maps with MethodSpec definitions for methods to be
@@ -184,13 +184,107 @@ public interface ClassGenerator {
 		methods.put(setterName, setterBuilder.build());
 	}
 
+	
+	/**
+	 * create setter method for additional fields
+	 * 
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
+	 * @param fieldName      - name of the additional field the getter and setter methods are generated for.
+	 * @param fieldTypeMirror  - {@code TypeMirror} of the class for the field for which the getter method is 
+	 * 							 to be created.
+	 * @param methods        - maps with MethodSpec definitions for methods to be
+	 *                       created
+	 */
+	default void createAdditionalSetterMethodSpec(final ElementInfo annotationInfo,
+												  String fieldName,
+												  final TypeMirror fieldTypeMirror,
+												  final Map<String, MethodSpec> methods) {
+		// create setter method
+		String className = annotationInfo.prefix() + annotationInfo.className();
+		String packageName = annotationInfo.packageName();
+		String setterName = generateSetterName(annotationInfo, fieldName);
+
+		TypeName fieldType = checkFieldTypeForCollections(annotationInfo, fieldTypeMirror, TypeName.get(fieldTypeMirror));
+
+		MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder(setterName).addModifiers(Modifier.PUBLIC)
+				.addParameter(fieldType, fieldName, new Modifier[0]);
+
+		// DeclaredType
+		if (fieldTypeMirror.getKind() == TypeKind.DECLARED) {
+
+			List<TypeName> typeArguments = obtainTypeArguments(fieldTypeMirror);
+
+			// todo: add recursion
+			// obtain type arguments
+			if (typeArguments != null && typeArguments.size() > 0) {
+				final StringBuilder typeArgString = new StringBuilder();
+				typeArguments.stream().forEach(argument -> {
+					String argString = argument.toString();
+					if (typeArgString.length() > 0) {
+						typeArgString.append(",");
+					}
+
+					Element argumentElement = getElementUtils().getTypeElement(argString);
+					boolean argumentIsMapped = fieldIsMapped(argumentElement);
+					if (argumentIsMapped) {
+						if (argumentElement instanceof TypeElement) {
+							ClassName argumentClassName = ClassName.get((TypeElement) argumentElement);
+							String fcName = annotationInfo.prefix() + argumentClassName.simpleName();
+							ClassName mappedFieldClassName = ClassName
+									.get(generatePackageName(argumentClassName, annotationInfo), fcName);
+							argString = mappedFieldClassName.canonicalName();
+						}
+					}
+					typeArgString.append(argString);
+				});
+				String typeArgs = "<" + typeArgString.toString() + ">";
+
+				TypeMirror collectionType = getElementUtils().getTypeElement("java.util.Collection").asType();
+				TypeMirror mapType = getElementUtils().getTypeElement("java.util.Map").asType();
+				TypeMirror setType = getElementUtils().getTypeElement("java.util.Set").asType();
+				// List
+				if (fieldTypeMirror != null && getTypeUtils().isAssignable(getTypeUtils().erasure(fieldTypeMirror),
+						getTypeUtils().erasure(collectionType))) {
+					setterBuilder.addStatement("this.$L = new $T" + typeArgs + "()", fieldName,
+							ArrayList.class).addStatement("this.$L.addAll($L)", fieldName,
+									fieldName);
+					// Set
+				} else if (fieldTypeMirror != null
+						&& getTypeUtils().isAssignable(getTypeUtils().erasure(fieldTypeMirror), getTypeUtils().erasure(setType))) {
+					setterBuilder.addStatement("this.$L = new $T" + typeArgs + "()", fieldName,
+							HashSet.class).addStatement("this.$L.addAll($L)", fieldName,
+									fieldName);
+					// Map
+				} else if (fieldTypeMirror != null
+						&& getTypeUtils().isAssignable(getTypeUtils().erasure(fieldTypeMirror), getTypeUtils().erasure(mapType))) {
+					setterBuilder.addStatement("this.$L = new $T" + typeArgs + "()", fieldName,
+							HashMap.class).addStatement("this.$L.putAll($L)", fieldName,
+									fieldName);
+				}
+			} else {
+				setterBuilder.addStatement("this.$L = $L", fieldName, fieldName);
+			}
+			// ArrayType
+		} else if (fieldTypeMirror.getKind() == TypeKind.ARRAY) {
+			setterBuilder.addStatement("this.$L = $L.clone()", fieldName, fieldName);
+		} else if (fieldTypeMirror.getKind() != TypeKind.PACKAGE && fieldTypeMirror.getKind() != TypeKind.MODULE
+				&& fieldTypeMirror.getKind() != TypeKind.ERROR && fieldTypeMirror.getKind() != TypeKind.EXECUTABLE
+				&& fieldTypeMirror.getKind() != TypeKind.UNION && fieldTypeMirror.getKind() != TypeKind.NULL) {
+			setterBuilder.addStatement("this.$L = $L", fieldName, fieldName);
+		}
+		if (annotationInfo.chainedSetters()) {
+			setterBuilder.addStatement("return this").returns(ClassName.get(packageName, className));
+		}
+		methods.put(setterName, setterBuilder.build());
+	}
+	
 	/**
 	 * create getter method
 	 * 
 	 * @param field          - the VariableElement or the field the setter is to be
 	 *                       created for.
 	 * @param annotationInfo - information about the arguments of the
-	 *                       <i>@JSONMapped</i> annotation
+	 *                       <i>@Mapped</i> annotation
 	 * @param fieldTypeName  - {@code TypeName} of the class for the field for which
 	 *                       the getter method is to be created.
 	 * @param methods        - maps with MethodSpec definitions for methods to be
@@ -211,12 +305,36 @@ public interface ClassGenerator {
 		methods.put(getterName, getter);
 	}
 
+	
+	/**
+	 * create getter method for additional fields
+	 * 
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
+	 * @param fieldName      - name of the additional field the getter and setter methods are generated for.
+	 * @param fieldTypeMirror  - {@code TypeMirror} of the class for the field for which the getter method is 
+	 * 							 to be created.
+	 * @param methods        - maps with MethodSpec definitions for methods to be
+	 *                       created
+	 */
+	default void createAdditionalGetterMethodSpec(final ElementInfo annotationInfo,
+												 String fieldName,
+												 final TypeMirror fieldTypeMirror,
+												 final Map<String, MethodSpec> methods) {
+		// create getter method
+		String getterName = generateGetterName(annotationInfo, fieldName, false);
+		TypeName fieldType = checkFieldTypeForCollections(annotationInfo, fieldTypeMirror,TypeName.get(fieldTypeMirror));
+
+		MethodSpec getter = MethodSpec.methodBuilder(getterName).addModifiers(Modifier.PUBLIC)
+																.addStatement("return " + fieldName)
+																.returns(fieldType).build();
+		methods.put(getterName, getter);
+	}
+
 	/**
 	 * create field
 	 * 
 	 * @param field          - VariableElement representation of field to be created
-	 * @param annotationInfo - information about the arguments of the
-	 *                       <i>@JSONMapped</i> annotation
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
 	 * @param fieldClass     - TypeName for class field shall be created in.
 	 * @param fieldIsMapped  - indicates whether or not the given field is annotated
 	 * 
@@ -228,6 +346,51 @@ public interface ClassGenerator {
 		return fieldspec;
 	}
 
+	/**
+	 * create (additional) field
+	 * 
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
+	 * @param fields         - list of fields to be created
+	 * 
+	 */
+	default void createAdditionalFields(ElementInfo annotationInfo, final List<FieldSpec> fields) {
+		annotationInfo.additionalFields().entrySet().stream().forEach(field -> {			
+			if (fields.stream().anyMatch(fieldSpec -> fieldSpec.name.equals(field.getKey()))) {
+				System.out.println("Additional field "+field.getKey()+" cannot be generated because it already exists. Check your annotated class and remove or rename this argument.");
+			} else {
+				TypeMirror fieldMirror = field.getValue();
+				FieldSpec fieldspec = FieldSpec.builder(TypeName.get(fieldMirror), field.getKey(), Modifier.PRIVATE).build();
+				fields.add(fieldspec);
+			}
+		});
+	}
+	
+	/**
+	 * create (additional) field, getters and setters
+	 * 
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
+	 * @param fields         - list of fields to be created
+	 * @param methods        - maps with MethodSpec definitions for methods to be
+	 * 
+	 */
+	default void createAdditionalFieldsGettersAndSetters(final ElementInfo annotationInfo, 
+														 final List<FieldSpec> fields, 
+														 final Map<String, MethodSpec> methods) {
+		annotationInfo.additionalFields().entrySet().stream().forEach(field -> {
+			if (fields.stream().anyMatch(fieldSpec -> fieldSpec.name.equals(field.getKey()))) {
+				System.out.println("Additional field "+field.getKey()+" cannot be generated because it already exists. Check your annotated class and remove or rename this argument.");
+			} else {
+				TypeMirror fieldMirror = field.getValue();
+				FieldSpec fieldspec = FieldSpec.builder(TypeName.get(fieldMirror), field.getKey(), Modifier.PRIVATE).build();
+				fields.add(fieldspec);
+				createAdditionalGetterMethodSpec(annotationInfo, field.getKey(), field.getValue(), methods);
+				createAdditionalSetterMethodSpec(annotationInfo, field.getKey(), field.getValue(), methods);
+			}
+		});
+	}
+
+	
+	
 	/**
 	 * generate a name for the field's getter method according to the specified
 	 * method. (fluent or not)
@@ -273,6 +436,14 @@ public interface ClassGenerator {
 		// create toSTring method
 		MethodSpec.Builder toStringBuilder = MethodSpec.methodBuilder("toString").addModifiers(Modifier.PUBLIC)
 				.addStatement("$T stringRep = this.getClass().getName()+ \"(\"", String.class);
+
+		annotationInfo.additionalFields().entrySet().stream().forEach(additionalFieldEntry -> {
+			String fieldName = additionalFieldEntry.getKey();
+			String statement = "stringRep += \"$L=\"+$L";
+				statement += "+\", \"";	
+			toStringBuilder.addStatement(statement, fieldName, fieldName);
+		});
+
 		annotationInfo.fields().stream().filter(field -> !isFieldFinalStatic(field)).forEach(field -> {
 			String fieldName = field.getSimpleName().toString();
 			String statement = "stringRep += \"$L=\"+$L";
@@ -280,6 +451,7 @@ public interface ClassGenerator {
 				statement += "+\", \"";
 			toStringBuilder.addStatement(statement, fieldName, fieldName);
 		});
+		
 		toStringBuilder.addStatement("stringRep += \")\"").addStatement("return stringRep")
 				.addJavadoc(CodeBlock.builder().add("All fields as a comma-separated list.\n").build());
 

@@ -12,10 +12,13 @@
 package net.magiccode.kilauea.generator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.squareup.javapoet.ClassName;
@@ -104,6 +107,12 @@ public class ElementInfo {
 	 */
 	@Builder.Default
 	private List<ClassName> interfaces = new ArrayList();
+	
+	/**
+	 * additional fields to be created for the generated class
+	 */
+	@Builder.Default
+	private Map<String, TypeMirror> additionalFields = new HashMap<>();
 	
 	/**
 	 * supuerclass for generated classes

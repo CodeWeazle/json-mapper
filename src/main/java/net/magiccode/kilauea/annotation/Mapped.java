@@ -138,5 +138,20 @@ public @interface Mapped {
 	 */
 	String xmlns() default "";
 	
-	
+	/**
+	 * yet undocumented and experimental feature which allows to specify @Field annotations
+	 * to generate additional fields. 
+	 * Example:
+	 * {@code
+	 * @Mapped(type=GeneratorType.JSON,fluentAccessors = false, 
+			useLombok = false,
+			additionalFields = @Fields (
+					@Field(name="name", 
+						   fieldClass=String.class)
+				)
+			)}
+	 * 
+	 * @return the defined fields
+	 */
+	Fields additionalFields() default @Fields(value = { });
 }

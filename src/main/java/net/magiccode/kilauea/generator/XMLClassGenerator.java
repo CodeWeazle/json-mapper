@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
@@ -170,33 +171,8 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 		FieldSpec fieldspec = null;
 		String fieldName = field.getSimpleName().toString();
 		if (field.getAnnotation(XMLTransient.class) == null && field.getAnnotation(XmlTransient.class) == null) {
-			AnnotationSpec.Builder xmlPropertyAnnotationBuilder;
-			// primitive types (and types in java.lang) are mapped as attributes
-			if (fieldClass.isPrimitive() || field.asType().toString().startsWith("java.lang") ) {
-				xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlAttribute.class).addMember(
-						"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
-			} else { // others as elements
-				xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlElement.class).addMember(
-						"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
-			}
-			
-			if (field.getAnnotation(XMLRequired.class) != null) {
-				xmlPropertyAnnotationBuilder.addMember("required", "true");
-			}
-
-
-			// check for namespace annotation on field
-			if (field.getAnnotation(XMLNamespace.class) != null) {
-				String namespace = field.getAnnotation(XMLNamespace.class).value();
-				xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , namespace);
-			} else {
-				String namespace = fieldIsMapped ? getMappingAnnotationNamespace(field) : annotationInfo.xmlns();
-				if (StringUtil.isBlank(namespace) && StringUtil.isNotBlank(annotationInfo.xmlns())) {	// add default namespace if not blank
-					namespace = annotationInfo.xmlns();
-				}
-				if (StringUtil.isNotBlank(namespace))
-					xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , namespace);
-			}
+			AnnotationSpec.Builder xmlPropertyAnnotationBuilder = createXMLAnnotationBuilderForField(field,
+					annotationInfo, fieldClass, fieldIsMapped);
 
 			annotations.add(xmlPropertyAnnotationBuilder.build());
 			
@@ -227,6 +203,118 @@ public class XMLClassGenerator extends AbstractClassGenerator {
 		return fieldspec;
 	}
 
+
+
+	/**
+	 * @param field
+	 * @param annotationInfo
+	 * @param fieldClass
+	 * @param fieldIsMapped
+	 * @return
+	 */
+	private AnnotationSpec.Builder createXMLAnnotationBuilderForField(final VariableElement field,
+			final ElementInfo annotationInfo, final TypeName fieldClass, boolean fieldIsMapped) {
+		AnnotationSpec.Builder xmlPropertyAnnotationBuilder;
+		// primitive types (and types in java.lang) are mapped as attributes
+		if (fieldClass.isPrimitive() || field.asType().toString().startsWith("java.lang") ) {
+			xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlAttribute.class).addMember(
+					"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
+		} else { // others as elements
+			xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlElement.class).addMember(
+					"name", StringUtil.quote(StringUtil.camelToSnake(field.getSimpleName().toString()), '"'));
+		}
+		
+		if (field.getAnnotation(XMLRequired.class) != null) {
+			xmlPropertyAnnotationBuilder.addMember("required", "true");
+		}
+
+
+		// check for namespace annotation on field
+		if (field.getAnnotation(XMLNamespace.class) != null) {
+			String namespace = field.getAnnotation(XMLNamespace.class).value();
+			xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , namespace);
+		} else {
+			String namespace = fieldIsMapped ? getMappingAnnotationNamespace(field) : annotationInfo.xmlns();
+			if (StringUtil.isBlank(namespace) && StringUtil.isNotBlank(annotationInfo.xmlns())) {	// add default namespace if not blank
+				namespace = annotationInfo.xmlns();
+			}
+			if (StringUtil.isNotBlank(namespace))
+				xmlPropertyAnnotationBuilder.addMember("namespace", "$S" , namespace);
+		}
+		return xmlPropertyAnnotationBuilder;
+	}
+
+	/**
+	 * create (additional) field
+	 * 
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
+	 * @param fields         - list of fields to be created
+	 * 
+	 */
+	@Override
+	public void createAdditionalFields(ElementInfo annotationInfo, final List<FieldSpec> fields) {
+		annotationInfo.additionalFields().entrySet().stream().forEach(field -> {
+			
+			FieldSpec.Builder fieldspecBuilder = getFieldAnnotation(field);
+			fields.add(fieldspecBuilder.build());
+		});
+	}
+
+
+	/**
+	 * create appropriate annotation for the given field depending on the GeneratorType.
+	 * 
+	 * 
+	 * @param field
+	 * @return
+	 */
+	private FieldSpec.Builder getFieldAnnotation(Entry<String, TypeMirror> field) {
+		TypeMirror fieldMirror = field.getValue();
+		TypeName fieldClass = TypeName.get(fieldMirror);
+		
+		AnnotationSpec.Builder xmlPropertyAnnotationBuilder;
+		// primitive types (and types in java.lang) are mapped as attributes
+		if (fieldClass.isPrimitive() || field.getValue().toString().startsWith("java.lang") ) {
+			xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlAttribute.class).addMember(
+					"name", StringUtil.quote(StringUtil.camelToSnake(field.getKey()), '"'));
+		} else { // others as elements
+			xmlPropertyAnnotationBuilder = AnnotationSpec.builder(XmlElement.class).addMember(
+					"name", StringUtil.quote(StringUtil.camelToSnake(field.getKey()), '"'));
+		}
+		
+		FieldSpec.Builder fieldspecBuilder = FieldSpec.builder(TypeName.get(fieldMirror), 
+																field.getKey(), 
+																Modifier.PRIVATE);			
+		fieldspecBuilder.addAnnotation(xmlPropertyAnnotationBuilder.build());
+		return fieldspecBuilder;
+	}
+
+	
+	/**
+	 * create (additional) fields with getters and setters
+	 * 
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
+	 * @param fields         - list of fields to be created
+	 * @param methods        - maps with MethodSpec definitions for methods to be
+	 * 
+	 */
+	@Override
+	public void createAdditionalFieldsGettersAndSetters(final ElementInfo annotationInfo, 
+														 final List<FieldSpec> fields, 
+														 final Map<String, MethodSpec> methods) {
+		annotationInfo.additionalFields().entrySet().stream().forEach(field -> {
+			if (fields.stream().anyMatch(fieldSpec -> fieldSpec.name.equals(field.getKey()))) {
+				System.out.println("Additional field "+field.getKey()+" cannot be generated because it already exists. Check your annotated class and remove or rename this argument.");
+			} else {
+				FieldSpec.Builder fieldspecBuilder = getFieldAnnotation(field);
+				fields.add(fieldspecBuilder.build());
+				
+				createAdditionalGetterMethodSpec(annotationInfo, field.getKey(), field.getValue(), methods);
+				createAdditionalSetterMethodSpec(annotationInfo, field.getKey(), field.getValue(), methods);
+			}
+		});
+	}
+	
 	/**
 	 * retrieve namespace entry of {@code Mapped} annotation of field mapped 
 	 * with {@code Mappde(type=GeneratorType.XML)}

@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
@@ -197,7 +198,67 @@ public class JSONClassGenerator extends AbstractClassGenerator {
 		}
 		return fieldspec;
 	}
+	
+	
+	/**
+	 * create (additional) field
+	 * 
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
+	 * @param fields         - list of fields to be created
+	 * 
+	 */
+	@Override
+	public void createAdditionalFields(ElementInfo annotationInfo, final List<FieldSpec> fields) {
+		annotationInfo.additionalFields().entrySet().stream().forEach(field -> {
+			FieldSpec.Builder fieldspecBuilder = generateFieldAnnotation(field);
+			fields.add(fieldspecBuilder.build());
+		});
+	}
 
+	/**
+	 * create (additional) fields with getters and setters
+	 * 
+	 * @param annotationInfo - information about the arguments of the <i>@Mapped</i> annotation
+	 * @param fields         - list of fields to be created
+	 * @param methods        - maps with MethodSpec definitions for methods to be
+	 * 
+	 */
+	@Override
+	public void createAdditionalFieldsGettersAndSetters(final ElementInfo annotationInfo, 
+														 final List<FieldSpec> fields, 
+														 final Map<String, MethodSpec> methods) {
+		annotationInfo.additionalFields().entrySet().stream().forEach(field -> {
+			if (fields.stream().anyMatch(fieldSpec -> fieldSpec.name.equals(field.getKey()))) {
+				System.out.println("Additional field "+field.getKey()+" cannot be generated because it already exists. Check your annotated class and remove or rename this argument.");
+			} else {
+				FieldSpec.Builder fieldspecBuilder = generateFieldAnnotation(field);
+				fields.add(fieldspecBuilder.build());
+				
+				createAdditionalGetterMethodSpec(annotationInfo, field.getKey(), field.getValue(), methods);
+				createAdditionalSetterMethodSpec(annotationInfo, field.getKey(), field.getValue(), methods);
+			}
+		});
+	}
+
+
+
+	/**
+	 * @param field
+	 * @return
+	 */
+	private FieldSpec.Builder generateFieldAnnotation(Entry<String, TypeMirror> field) {
+		TypeMirror fieldMirror = field.getValue();
+		AnnotationSpec.Builder jsonPropertyAnnotationBuilder = AnnotationSpec.builder(JsonProperty.class).addMember(
+				"value", StringUtil.quote(StringUtil.camelToSnake(field.getKey()), '"'));
+		
+		FieldSpec.Builder fieldspecBuilder = FieldSpec.builder(TypeName.get(fieldMirror), 
+																field.getKey(), 
+																Modifier.PRIVATE);
+		fieldspecBuilder.addAnnotation(jsonPropertyAnnotationBuilder.build());
+		return fieldspecBuilder;
+	}
+	
+	
 	@Override
 	public Types getTypeUtils() {
 		return procEnv.getTypeUtils();

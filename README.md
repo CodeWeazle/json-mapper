@@ -18,7 +18,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
       <dependency>
 	 	<groupId>net.magiccode</groupId>
 		<artifactId>kilauea</artifactId>
-		<version>0.1.0</version>
+		<version>0.1.2</version>
       </dependency>
       ...
     </dependencies>
@@ -37,7 +37,7 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 					<path>
 						<groupId>net.magiccode</groupId>
 						<artifactId>kilauea</artifactId>
-						<version>0.1.0</version>
+						<version>0.1.2</version>
 					</path>
 					...
 				</annotationProcessorPaths>
@@ -49,12 +49,12 @@ Add the annotation processor class to your pom.xml and rebuild your project. (Th
 
 ### Gradle
 ```
-implementation group: 'net.magiccode', name: 'kilauea', version: '0.1.0'
+implementation group: 'net.magiccode', name: 'kilauea', version: '0.1.2'
 
 ...
 dependencies {
-  compile("net.magiccode:kilauea:0.1.0")
-  annotationProcessor("net.magiccode:kilauea:0.1.0")
+  compile("net.magiccode:kilauea:0.1.2")
+  annotationProcessor("net.magiccode:kilauea:0.1.2")
   ...
 }
 ```
