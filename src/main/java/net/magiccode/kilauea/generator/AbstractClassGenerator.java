@@ -123,12 +123,14 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 			createOfWithArguments(packageName, className, annotationInfo, methods);
 			createOfWithClass(key, packageName, className, annotationInfo, methods);
 			createSpecificFieldsAndMethods(key, packageName, className, annotationInfo, fields, methods);
-
-			// create to method
+			
 			String sourcePackageName = ClassName.get(annotationInfo.element()).packageName();
 			String sourceClassName = ClassName.get(annotationInfo.element()).simpleName();
-			createTo(sourcePackageName, sourceClassName, annotationInfo, methods);
-
+			// no <i>to</> method for abstract classes! 
+			if (! annotationInfo.element().getModifiers().contains(Modifier.ABSTRACT)) {
+				// create to method
+				createTo(sourcePackageName, sourceClassName, annotationInfo, methods);
+			}
 			// generate and write class
 			TypeSpec generatedClass = generateClass(annotationInfo, className, packageName, fields, methods);
 			JavaFile javaFile = JavaFile.builder(packageName, generatedClass).indent("    ").build();
