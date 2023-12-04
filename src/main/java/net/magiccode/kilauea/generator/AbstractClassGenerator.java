@@ -256,6 +256,11 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 				.addFields(fields).addMethods(methods.values())
 
 				.addAnnotation(createMappedByAnnotation(annotationInfo));
+		
+		
+		if (annotationInfo.element().getModifiers().contains(Modifier.ABSTRACT)) {
+			generateClassBuilder.addModifiers(Modifier.ABSTRACT);
+		}
 		List<AnnotationSpec> additionalAnnotations = getAdditionalAnnotationsForClass(annotationInfo);
 		if (additionalAnnotations != null && additionalAnnotations.size() > 0) {
 			additionalAnnotations.stream()
