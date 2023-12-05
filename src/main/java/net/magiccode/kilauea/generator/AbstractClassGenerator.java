@@ -291,11 +291,11 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 						generateClassBuilder.addSuperinterface(intf);
 					});
 		}
-		TypeSpec generatedClssType = generateClassBuilder.build();
+		TypeSpec generatedClassType = generateClassBuilder.build();
 
 		messager.printMessage(Diagnostic.Kind.NOTE, "Generated " + className);
 
-		return generatedClssType;
+		return generatedClassType;
 	}
 
 	/**

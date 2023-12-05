@@ -178,7 +178,7 @@ public class Mapper extends MapperBase {
 			/* check for superclass
 			 * 
 			 */
-			TypeElement superClassElement = null;			
+			ClassName superClassElement = null;			
 			// deriving the name of the class containing the annotation
 			ClassName className = ClassName.get(annotatedElement);	
 			messager.printMessage(Diagnostic.Kind.NOTE, "Class " + className.canonicalName());
@@ -192,8 +192,18 @@ public class Mapper extends MapperBase {
 				List<VariableElement> fields = ElementFilter.fieldsIn(annotatedElement.getEnclosedElements());				
 				/** find typeElement for specified super-classs */				
 				
-				if (superClassElement == null)
-					superClassElement = procEnv.getElementUtils().getTypeElement(mapped.superclass());
+				if (superClassElement == null) {
+					TypeElement superClassTypeElement = procEnv.getElementUtils().getTypeElement(mapped.superclass());
+					if (superClassTypeElement!= null)
+						superClassElement = ClassName.get((TypeElement)superClassTypeElement);
+				}
+				
+				if (superClassElement == null && StringUtil.isNotBlank(mapped.superclass())) {
+					int lastDotIndex = mapped.superclass().lastIndexOf('.');
+					String pack = mapped.superclass().substring(0, lastDotIndex);
+					String clazz = mapped.superclass().substring(lastDotIndex+1);
+					superClassElement = ClassName.get(pack, clazz);
+				}
 				
 				if (mapped.inheritFields())
 					addSuperclassFields(annotatedElement, fields);
@@ -263,7 +273,7 @@ public class Mapper extends MapperBase {
 										  final TypeElement typeElement, 
 										  final ClassName className,
 										  final List<VariableElement> fields, 
-										  final TypeElement superClassElement, 
+										  final ClassName superClassElement, 
 										  final Map<String, TypeElement> interfaces) {
 		
 		// handle default subpackage name
@@ -321,7 +331,7 @@ public class Mapper extends MapperBase {
 																	.xmlns(mapped.xmlns());
 		// add superclass
 		if (superClassElement != null) {
-			elementInfoBuiler.superclass(ClassName.get((TypeElement)superClassElement));
+			elementInfoBuiler.superclass(superClassElement);
 		}
 		// add interfaces
 		ElementInfo elementInfo = elementInfoBuiler.build();
