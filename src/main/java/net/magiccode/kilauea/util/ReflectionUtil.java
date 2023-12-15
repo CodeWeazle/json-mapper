@@ -15,6 +15,7 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.stream.Stream;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -148,4 +149,16 @@ public class ReflectionUtil {
 		return field;
 	}
 
+	
+	/**
+	 * checks given class for non-args constructor
+	 * @param clazz the class to check for non-args constructor
+	 * @return flag indicating whether or not constructor was found
+	 * 
+	 */
+	public static boolean hasPublicNonArgConstructor(Class<?> clazz) {
+	    return Stream.of(clazz.getConstructors())
+	                 .anyMatch((c) -> c.getParameterCount() == 0);
+	}
 }
+ 

@@ -134,6 +134,9 @@ To create a mapped class of an instance 0f *Person*, apply the *of()* method lik
 
 The *of()* method of the generated class can possibly throw an *IllegalAccessException*, because the setters need to be called indirectly by the use of reflection. This is, because we cannot know if the class our code is generated from uses fluent accessors or not, so generating a mapping method calling setters could easily fail. Calling a (setter) method via reflection needs proper handling of the *IllegalAccessException* (which is quite unlikely to be thrown), which we leave to the implementation of the class that calls this code, because we believe the author of that can deal with it according to the context the code is running in.
 
+**Important**: The *of()* methods are NOT being generated, if the annotated class is *abstract*!
+
+
 To map the instance back into the original class, the *to()* method should be employed, like in this example
 
 ```
@@ -143,6 +146,8 @@ To map the instance back into the original class, the *to()* method should be em
 		e.printStackTrace();
 	}
 ```
+
+**Important**: The *to()* method is NOT being generated, if the annotated class is either *abstract* or does not have a non-args constructor!
 
 ### Getters and setters
 

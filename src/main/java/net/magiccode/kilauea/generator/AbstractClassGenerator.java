@@ -129,15 +129,22 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 			String sourcePackageName = ClassName.get(annotationInfo.element()).packageName();
 			String sourceClassName = ClassName.get(annotationInfo.element()).simpleName();
 			// no <i>to</> method for abstract classes! 
-			if (! annotationInfo.element().getModifiers().contains(Modifier.ABSTRACT)) {
+			if (! annotationInfo.element().getModifiers().contains(Modifier.ABSTRACT) &&
+				annotationInfo.annotatedClassHasPublicConstructor()) {
 				// create to method
 				createTo(sourcePackageName, sourceClassName, annotationInfo, methods);
+			} else {
+				messager.printMessage(Diagnostic.Kind.WARNING,
+						"no to() method generated for class " + packageName + "." + className+ ". "+
+						(annotationInfo.element().getModifiers().contains(Modifier.ABSTRACT)
+						 ? key.canonicalName() + " is abstract." 
+						 : key.canonicalName() + " does not have a non-args constructor."));
 			}
 			// generate and write class
 			TypeSpec generatedClass = generateClass(annotationInfo, className, packageName, fields, methods);
 			JavaFile javaFile = JavaFile.builder(packageName, generatedClass).indent("    ").build();
 			if (javaFile.toJavaFileObject().delete()) {
-				System.out.println("Duplicate @Mapper annotation on class "+sourceClassName+"\n. Previously generated file has been deleted. Please check your source code.");
+				messager.printMessage(Diagnostic.Kind.WARNING, "Duplicate @Mapper annotation on class "+sourceClassName+"\n. Previously generated file has been deleted. Please check your source code.");
 			}
 			javaFile.writeTo(filer);
 		} catch (IOException e) {
