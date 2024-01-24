@@ -327,7 +327,7 @@ Support for jsr-310 compatible handling of *java.time.LocalDate* and *java.time.
 
 ### toJSONString()
 
-Additionally to the usual *toString()* method and additional *toJSONString()* method is generated that prints the name and contents of the class as formatted JSON.
+Additionally to the usual *toString()* method an additional *toJSONString()* method is generated that prints the name and contents of the class as formatted JSON.
 
 ```
 net.magiccode.lazy.json.JSONExampleCode04{
