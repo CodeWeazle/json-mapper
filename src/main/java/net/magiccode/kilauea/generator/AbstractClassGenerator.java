@@ -132,7 +132,9 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 			if (! annotationInfo.element().getModifiers().contains(Modifier.ABSTRACT) &&
 				annotationInfo.annotatedClassHasPublicConstructor()) {
 				// create to method
+				createToWithArgument(sourcePackageName, sourceClassName, annotationInfo, methods);
 				createTo(sourcePackageName, sourceClassName, annotationInfo, methods);
+				createIncomingClassInstantiationMethod(sourcePackageName, sourceClassName, methods);
 			} else {
 				messager.printMessage(Diagnostic.Kind.WARNING,
 						"no to() method generated for class " + packageName + "." + className+ ". "+
@@ -862,21 +864,23 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 	 * @param methods        - {@code Map} of methods to be generated for the class
 	 *                       which is being processed
 	 */
-	private void createTo(String packageName, String className, final ElementInfo annotationInfo,
+	private void createToWithArgument(String packageName, String className, final ElementInfo annotationInfo,
 			final Map<String, MethodSpec> methods) {
 		// create of method
 		final String objectName = StringUtil.uncapitalise(className);
 		final ClassName externalClass = ClassName.get(packageName, className);
-
-		MethodSpec.Builder to = MethodSpec.methodBuilder("to").addModifiers(Modifier.PUBLIC)
+		String parameterName = "in"+className;
+		MethodSpec.Builder to = MethodSpec.methodBuilder("to")
+					.addModifiers(Modifier.PUBLIC)
+					.addParameter(externalClass, parameterName, new Modifier[0])
 				.addException(IllegalAccessException.class)
 				.addJavadoc(CodeBlock.builder()
-						.add("Recreates instance of {@code $L} object from the given object instance,\n", externalClass)
+						.add("Returns the given instance of {@code $L} populated with the field values of the mapper class.\n", externalClass)
 						.add("Calling the setters on the source would lead to an exception and is insecure,\n")
 						.add("because we cannot predict if fluent accessors are being used.\n")
 						.add("For this reason the getter call is wrapped by reflection.\n\n")
 						.add("@return the recreated object instance of $L", externalClass).build())
-				.addStatement("$T $L = new $T()", externalClass, objectName, externalClass);
+				.addStatement("$T $L = $L", externalClass, objectName, parameterName);
 
 		AtomicInteger fieldCount = new AtomicInteger(0);
 		annotationInfo.fields().stream()
@@ -950,9 +954,68 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 					to.endControlFlow();
 				});
 		to.addStatement("return $L", objectName).returns(ClassName.get(packageName, className));
-		methods.put("to", to.build());
+		methods.put("toWithArguments", to.build());
 	}
 
+	/**
+	 * generates a private method to return an new instance of the annotated class
+	 * with copies of all field values.
+	 * 
+	 * @param packageName    - name of the package of the class which is being
+	 *                       create by this method belongs to.
+	 * @param className      - name of the class which is being create by this
+	 *                       method belongs to.
+	 * @param methods        - {@code Map} of methods to be generated for the class
+	 *                       which is being processed
+	 */
+	private void createIncomingClassInstantiationMethod(String packageName, 
+														String className, 
+														final Map<String, MethodSpec> methods) {
+		// create of method
+		final String objectName = StringUtil.uncapitalise(className);
+		final ClassName externalClass = ClassName.get(packageName, className);
+
+		MethodSpec.Builder createInstance = MethodSpec.methodBuilder("createInstanceForTo").addModifiers(Modifier.PRIVATE)
+				.addException(IllegalAccessException.class)
+				.addJavadoc(CodeBlock.builder()
+						.add("Returns a new instance of {@code $L} object.\n", externalClass)
+						.add("@return the recreated object instance of $L", externalClass).build())
+				.addStatement("$T $L = new $T()", externalClass, objectName, externalClass)
+				.addStatement("return $L", objectName).returns(ClassName.get(packageName, className));
+		methods.put("createInstanceForTo", createInstance.build());
+	}
+	
+	/**
+	 * generates a <i>to</i>-method which returns an instance of the annotated class
+	 * with copies of all field values.
+	 * 
+	 * @param packageName    - name of the package of the class which is being
+	 *                       create by this method belongs to.
+	 * @param className      - name of the class which is being create by this
+	 *                       method belongs to.
+	 * @param annotationInfo - {@code ElementInfo} instance of the annotated class
+	 * @param methods        - {@code Map} of methods to be generated for the class
+	 *                       which is being processed
+	 */
+	private void createTo(String packageName, String className, final ElementInfo annotationInfo,
+			final Map<String, MethodSpec> methods) {
+		// create of method
+		final String objectName = StringUtil.uncapitalise(className);
+		final ClassName externalClass = ClassName.get(packageName, className);
+
+		MethodSpec.Builder to = MethodSpec.methodBuilder("to").addModifiers(Modifier.PUBLIC)
+				.addException(IllegalAccessException.class)
+				.addJavadoc(CodeBlock.builder()
+						.add("Recreates instance of {@code $L} object from the given object instance,\n", externalClass)
+						.add("Calling the setters on the source would lead to an exception and is insecure,\n")
+						.add("because we cannot predict if fluent accessors are being used.\n")
+						.add("For this reason the getter call is wrapped by reflection.\n\n")
+						.add("@return the recreated object instance of $L", externalClass).build())
+				.addStatement("$T $L = to(createInstanceForTo())", externalClass, objectName);
+		to.addStatement("return $L", objectName).returns(ClassName.get(packageName, className));
+		methods.put("to", to.build());
+	}
+	
 	/**
 	 * generate a mapping statement and method for the {@code JASONMapped} argument
 	 * type fo a liset, used in the to() method

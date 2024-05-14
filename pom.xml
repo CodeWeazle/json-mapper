@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.magiccode</groupId>
 	<artifactId>kilauea</artifactId>
-	<version>0.1.7</version>
+	<version>0.1.9-SNAPSHOT</version>
 	<description>Provides annotations for entity-json mapping dto generation</description>
 	<url>https://github.com/CodeWeazle/kilauea</url>
 
