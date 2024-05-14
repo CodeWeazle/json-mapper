@@ -30,6 +30,8 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
@@ -327,6 +329,7 @@ public class Mapper extends MapperBase {
 																	.dateTimePattern(mapped.dateTimePattern())
 																	.useLombok(mapped.useLombok())
 																	.additionalFields(additionalFieldMap)
+																	.annotatedClassHasPublicConstructor(typeHasNonArgsConstructor(typeElement))
 																	// xml only
 																	.xmlns(mapped.xmlns());
 		// add superclass
@@ -365,5 +368,24 @@ public class Mapper extends MapperBase {
        }
    }
 
+   
+   /**
+    * check typeElement for the existance of a non-args constructor
+    * 
+    * @param typeElement the {@code TypeElement} to check
+	* @return indication whether or not the given element has a non-args-construcdtor
+	*/
+	private static boolean typeHasNonArgsConstructor (TypeElement typeElement) {
+		return typeElement.getEnclosedElements().stream()
+					// get all public constructors
+					.filter(encElem->encElem.getKind()==ElementKind.CONSTRUCTOR &&
+									 encElem.getModifiers().contains(Modifier.PUBLIC))
+					.map(encElem -> ((ExecutableElement) encElem) )
+					// filter only those with 0 arguments -> empty.list
+					.filter(execEncElem->execEncElem.getParameters().size()==0)
+					.count() > 0; 
+
+   }
+   
 
 }

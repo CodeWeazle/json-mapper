@@ -146,5 +146,5 @@ public class ElementInfo {
 		return interfaces().stream().filter(intf-> intf.canonicalName().equals(className.canonicalName())).count()>0;
 	}
 
-	
+	private boolean annotatedClassHasPublicConstructor;
 }
