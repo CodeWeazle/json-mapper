@@ -147,7 +147,19 @@ To map the instance back into the original class, the *to()* method should be em
 	}
 ```
 
-**Important**: The *to()* method is NOT being generated, if the annotated class is either *abstract* or does not have a non-args constructor!
+It is also possible to provide an existing object as an argument to the *to()* method. In this case, no new object is created but the given instance is populated with the values from the mapped class.
+
+```
+	Person personFromStorage = someRepository readPerson(...);
+	...
+	try {
+		Person person = personMapped.to(personFromStorage);
+	} catch (IllegalAccessException e) {
+		e.printStackTrace();
+	}
+```
+
+**Important**: The *to()* methods are NOT being generated, if the annotated class is either *abstract* or does not have a non-args constructor!
 
 ### Getters and setters
 
