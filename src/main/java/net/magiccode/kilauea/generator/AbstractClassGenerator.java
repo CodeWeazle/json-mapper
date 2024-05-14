@@ -132,6 +132,7 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 			if (! annotationInfo.element().getModifiers().contains(Modifier.ABSTRACT)) {
 				// create to method
 				createTo(sourcePackageName, sourceClassName, annotationInfo, methods);
+				createIncomingClassInstantiationMethod(packageName, className, methods);
 			}
 			// generate and write class
 			TypeSpec generatedClass = generateClass(annotationInfo, className, packageName, fields, methods);
@@ -943,6 +944,33 @@ public abstract class AbstractClassGenerator implements ClassGenerator {
 		methods.put("to", to.build());
 	}
 
+	/**
+	 * generates a private method to return an new instance of the annotated class
+	 * with copies of all field values.
+	 * 
+	 * @param packageName    - name of the package of the class which is being
+	 *                       create by this method belongs to.
+	 * @param className      - name of the class which is being create by this
+	 *                       method belongs to.
+	 * @param methods        - {@code Map} of methods to be generated for the class
+	 *                       which is being processed
+	 */
+	private void createIncomingClassInstantiationMethod(String packageName, 
+														String className, 
+														final Map<String, MethodSpec> methods) {
+		// create of method
+		final String objectName = StringUtil.uncapitalise(className);
+		final ClassName externalClass = ClassName.get(packageName, className);
+
+		MethodSpec.Builder createInstance = MethodSpec.methodBuilder("createInstanceForTo").addModifiers(Modifier.PRIVATE)
+				.addException(IllegalAccessException.class)
+				.addJavadoc(CodeBlock.builder()
+						.add("Returns a new instance of {@code $L} object.\n", externalClass)
+						.add("@return the recreated object instance of $L", externalClass).build())
+				.addStatement("$T $L = new $T()", externalClass, objectName, externalClass)
+				.addStatement("return $L", objectName).returns(ClassName.get(packageName, className));
+		methods.put("createInstanceForTo", createInstance.build());
+	}
 	/**
 	 * generate a mapping statement and method for the {@code JASONMapped} argument
 	 * type fo a liset, used in the to() method
